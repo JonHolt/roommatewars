@@ -1,15 +1,15 @@
 'use strict';
 
-var World = require('psykick2d').World;
+var World = require('psykick2d').World,
+    layers = {};
 
 module.exports = {
-    showMainMenu: function() {
-        var layer = World.createLayer(),
-            startGameEntity = World.createEntity(),
-            creditsEntity = World.createEntity(),
+    showLobby: function() {
+        var lobbyLayer = World.createLayer(),
+            Welcome Entity = World.createEntity(),
 
             drawTextSystem = new DrawTextSystem(),
-            moveSystem = new MoveSystem();
+            drawButtonSystem = new DrawButtonSystem();
 
         var textComponent = new Text({
             x: 100,
@@ -26,12 +26,11 @@ module.exports = {
 
         // ...
 
-        layer.addSystem(drawTextSystem);
-        World.pushLayer(layer);
-    },
+        lobbyLayer.addSystem(drawTextSystem);
+        layers = {
 
-    showOptions: function() {
-
+        };
+        World.pushLayer(lobbyLayer);
     },
 
     showGame: function() {
