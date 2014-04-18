@@ -22,7 +22,7 @@ var Text = function(options){
     var defaults = {
         x:0,
         y:0,
-        size:'12px',
+        font:'20pt Arial',
         color:'#FFF',
         text:'Your resident game designer failed to provide you with a message to put here.'
     }
@@ -30,6 +30,7 @@ var Text = function(options){
     options = Helper.defaults(options,defaults);
     this.x = options.x;
     this.y = options.y;
+    this.font = options.font,
     this.color = options.color;
     this.text = options.text;
 }

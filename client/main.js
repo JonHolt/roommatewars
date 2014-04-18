@@ -6,7 +6,7 @@
     //socket = io.connect(config.server);
 
     World.init({
-        backgroundColor: '#FFF',
+        backgroundColor: '#444',
         width: 900,
         height: 600
     });
@@ -20,13 +20,4 @@
     });*/
 //socket.emit('input',{teh:'data'});
 
-    /*ScreenFactory.showLobby({
-     onSelection: function(option) {
-     switch (option) {
-     case 'play game':
-     ScreenFactory.setMainGame();
-
-     break;
-     }
-     }
-     });*/
+ScreenFactory.showLobby();
