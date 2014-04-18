@@ -6,12 +6,11 @@ var World = require('psykick2d').World,
 module.exports = {
     showLobby: function() {
         var lobbyLayer = World.createLayer(),
-            welcomeEntity = World.createEntity(),
+            titleEntity = World.createEntity(),
             nameEntity = World.createEntity(),
             readyEntity = World.createEntity(),
 
-            drawTextSystem = new DrawTextSystem(),
-            drawButtonSystem = new DrawButtonSystem();
+            drawTextSystem = new DrawTextSystem();
 
         var textComponent = new Text({
             x: 350,
@@ -21,19 +20,20 @@ module.exports = {
             text: 'Welcome'
         });
 
-        welcomeEntity.addComponent(textComponent);
-        startGameEntity.addComponentAs(textComponent, 'Position');
-        drawTextSystem.addEntity(startGameEntity);
-        moveSystem.addEntity(startGameEntity);
+        titleEntity.addComponent(textComponent);
+        drawTextSystem.addEntity(titleEntity);
 
 
         // ...
 
         lobbyLayer.addSystem(drawTextSystem);
         layers = {
-
+            lobby : lobbyLayer
         };
         World.pushLayer(lobbyLayer);
+        World.addEventListener('afterDraw',function(){
+            lobbyLayer.visible = false;
+        })
     },
 
     showGame: function() {

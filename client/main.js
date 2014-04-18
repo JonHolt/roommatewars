@@ -14,7 +14,10 @@
 
     /*socket.on('update', function (data) {
 
-     });*/
+    });*/
+    /*socket.on('newPlayer', function (data) {
+        lobbyLayer.visible = false;
+    });*/
 //socket.emit('input',{teh:'data'});
 
     /*ScreenFactory.showLobby({

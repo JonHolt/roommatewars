@@ -7,11 +7,11 @@ module.exports = function(grunt){
     grunt.initConfig({
         watch: {
             debug:{
-                files: 'client/*.js',
+                files: 'client/main.js',
                 tasks: ['browserify:debug']
             },
             release:{
-                files: 'client/*.js',
+                files: 'client/main.js',
                 tasks: ['browserify:release']
             }
         },
