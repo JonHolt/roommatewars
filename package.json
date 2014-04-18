@@ -5,6 +5,12 @@
   "dependencies": {
     "psykick2d": "~0.3.2",
     "browserify": "^3.43.0",
-    "socket.io": "^0.9.16"
+    "socket.io": "^0.9.16",
+    "grunt": "^0.4.4",
+    "grunt-browserify": "^2.0.7",
+    "matchdep": "^0.3.0"
+  },
+  "devDependencies": {
+    "grunt-contrib-watch": "^0.6.1"
   }
 }
