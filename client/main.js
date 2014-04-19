@@ -3,7 +3,7 @@
     var World = require('psykick2d').World,
         ScreenFactory = require('./screen-factory.js'),
         config = require('./config.json');
-    //socket = io.connect(config.server);
+    var socket = io.connect(config.server, {query:JSON.stringify(config)});
 
     World.init({
         backgroundColor: '#444',
@@ -11,13 +11,13 @@
         height: 600
     });
 
+    socket.on('confirm',function(data){
+        console.log(data);
+    });
 
     /*socket.on('update', function (data) {
 
     });*/
-    /*socket.on('newPlayer', function (data) {
-        lobbyLayer.visible = false;
-    });*/
-//socket.emit('input',{teh:'data'});
+
 
 ScreenFactory.showLobby();

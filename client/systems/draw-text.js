@@ -30,6 +30,6 @@ DrawText.prototype.draw = function(c){
         c.fillText(text.text,0,0);
         c.restore();
     }
-}
+};
 
 module.exports = DrawText;

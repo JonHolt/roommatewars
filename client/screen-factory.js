@@ -16,11 +16,12 @@ module.exports = {
     showLobby: function() {
         var lobbyLayer = World.createLayer(),
             titleEntity = World.createEntity(),
-            nameEntity = World.createEntity(),
-            readyEntity = World.createEntity(),
+            nameEntity = [],
 
             drawTextSystem = new DrawTextSystem(),
             drawRectSystem = new DrawRectSystem();
+
+        nameEntity.push(World.createEntity());
 
         var titleComponent = new Text({
             x: 170,
@@ -46,11 +47,11 @@ module.exports = {
         });
 
         titleEntity.addComponent(titleComponent);
-        nameEntity.addComponent(nameComponent);
-        readyEntity.addComponent(rectComponent);
-        readyEntity.addComponent(colorComponent);
+        nameEntity[0].addComponent(nameComponent);
+        nameEntity[0].addComponent(rectComponent);
+        nameEntity[0].addComponent(colorComponent);
 
-        drawRectSystem.addEntity(readyEntity);
+        drawRectSystem.addEntity(nameEntity);
         drawTextSystem.addEntity(titleEntity);
         drawTextSystem.addEntity(nameEntity);
 

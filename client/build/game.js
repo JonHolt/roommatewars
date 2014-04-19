@@ -41,7 +41,7 @@ module.exports = Text;
 },{"psykick2d":18}],2:[function(require,module,exports){
 module.exports={
     "playername":"Jon",
-    "server":"localhost"
+    "server":"192.168.1.4:4242"
 }
 },{}],3:[function(require,module,exports){
 'use strict';
@@ -49,7 +49,7 @@ module.exports={
     var World = require('psykick2d').World,
         ScreenFactory = require('./screen-factory.js'),
         config = require('./config.json');
-    //socket = io.connect(config.server);
+    var socket = io.connect(config.server, {query:JSON.stringify(config)});
 
     World.init({
         backgroundColor: '#444',
@@ -57,14 +57,14 @@ module.exports={
         height: 600
     });
 
+    socket.on('confirm',function(data){
+        console.log(data);
+    });
 
     /*socket.on('update', function (data) {
 
     });*/
-    /*socket.on('newPlayer', function (data) {
-        lobbyLayer.visible = false;
-    });*/
-//socket.emit('input',{teh:'data'});
+
 
 ScreenFactory.showLobby();
 },{"./config.json":2,"./screen-factory.js":4,"psykick2d":18}],4:[function(require,module,exports){
@@ -86,11 +86,12 @@ module.exports = {
     showLobby: function() {
         var lobbyLayer = World.createLayer(),
             titleEntity = World.createEntity(),
-            nameEntity = World.createEntity(),
-            readyEntity = World.createEntity(),
+            nameEntity = [],
 
             drawTextSystem = new DrawTextSystem(),
             drawRectSystem = new DrawRectSystem();
+
+        nameEntity.push(World.createEntity());
 
         var titleComponent = new Text({
             x: 170,
@@ -116,11 +117,11 @@ module.exports = {
         });
 
         titleEntity.addComponent(titleComponent);
-        nameEntity.addComponent(nameComponent);
-        readyEntity.addComponent(rectComponent);
-        readyEntity.addComponent(colorComponent);
+        nameEntity[0].addComponent(nameComponent);
+        nameEntity[0].addComponent(rectComponent);
+        nameEntity[0].addComponent(colorComponent);
 
-        drawRectSystem.addEntity(readyEntity);
+        drawRectSystem.addEntity(nameEntity);
         drawTextSystem.addEntity(titleEntity);
         drawTextSystem.addEntity(nameEntity);
 
@@ -178,7 +179,7 @@ DrawText.prototype.draw = function(c){
         c.fillText(text.text,0,0);
         c.restore();
     }
-}
+};
 
 module.exports = DrawText;
 },{"psykick2d":18}],6:[function(require,module,exports){

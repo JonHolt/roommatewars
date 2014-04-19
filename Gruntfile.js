@@ -11,7 +11,7 @@ module.exports = function(grunt){
                 tasks: ['browserify:debug']
             },
             release:{
-                files: 'client/**/*.js',
+                files: ['client/*.js','client/components/*.js','client/systems/*.js'],
                 tasks: ['browserify:release']
             }
         },
