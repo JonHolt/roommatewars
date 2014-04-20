@@ -8,12 +8,17 @@
         }
         canvas {
             display: block;
-            margin: 0 auto;
+            margin: 25px auto;
+        }
+        div{
+            display: block;
+            margin: 25px auto;
         }
     </style>
 </head>
 <body>
-    <canvas id="psykick" width="800" height="600"></canvas>
-    <script src="build/game.js"></script>
+    <div id="psykick"></div>
+    <script src="http://192.168.1.4:4242/socket.io/socket.io.js"></script>
+    <script src="build/game-debug.js"></script>
 </body>
 </html>

@@ -6,11 +6,11 @@ module.exports = function(grunt){
     grunt.initConfig({
         watch: {
             debug:{
-                files: 'client/main.js',
+                files: ['client/*.js','client/components/*.js','client/systems/*.js'],
                 tasks: ['browserify:debug']
             },
             release:{
-                files: 'client/main.js',
+                files: ['client/*.js','client/components/*.js','client/systems/*.js'],
                 tasks: ['browserify:release']
             }
         },
