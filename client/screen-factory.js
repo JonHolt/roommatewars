@@ -4,6 +4,7 @@ var World = require('psykick2d').World,
 
     DrawTextSystem = require('./systems/draw-text.js'),
     DrawRectSystem = require('psykick2d').Systems.Render.ColoredRect,
+    ReadySystem = require('./systems/ready-up.js'),
 
     Text = require('./components/text.js'),
     Rect = require('psykick2d').Components.Shape.Rectangle,
@@ -13,7 +14,7 @@ var World = require('psykick2d').World,
     layers = {};
 
 module.exports = {
-    showLobby: function() {
+    showLobby: function(sock) {
         var lobbyLayer = World.createLayer(),
             titleEntity = World.createEntity(),
             nameEntity = [],
@@ -51,10 +52,16 @@ module.exports = {
         nameEntity[0].addComponent(rectComponent);
         nameEntity[0].addComponent(colorComponent);
 
-        drawRectSystem.addEntity(nameEntity);
-        drawTextSystem.addEntity(titleEntity);
-        drawTextSystem.addEntity(nameEntity);
+        var readySystem = new ReadySystem({
+            socket:sock,
+            player:nameEntity[0]
+        });
 
+        drawRectSystem.addEntity(nameEntity[0]);
+        drawTextSystem.addEntity(titleEntity);
+        drawTextSystem.addEntity(nameEntity[0]);
+
+        lobbyLayer.addSystem(readySystem);
         lobbyLayer.addSystem(drawRectSystem);
         lobbyLayer.addSystem(drawTextSystem);
         layers = {
