@@ -4,6 +4,11 @@ var World = require('psykick2d').World,
     Helper = require('psykick2d').Helper,
     Component = require('psykick2d').Component,
 
+    Sprite = require('psykick2d').Systems.Render.Sprite,
+    playerDrawSystem = new Sprite(),
+    BackGround = require('./systems/render/background-render.js'),
+    backgroundDrawSystem = new BackGround(),
+
     terrainLayer = World.createLayer(),
     playerLayer = World.createLayer();
 
@@ -26,9 +31,9 @@ module.exports = {
                         addEntity.addComponent(addComponent);
                     }
                     if(entityData.layer === 'terrain'){
-                        terrainLayer.addEntity(addEntity); //Change this to add to system instead
+                        backgroundDrawSystem.addEntity(addEntity); //Change this to add to system instead
                     } else if(entityData.layer === 'player'){
-                        playerLayer.addEntity(addEntity); //Change these to add to systems instead
+                        playerDrawSystem.addEntity(addEntity); //Change these to add to systems instead
                     } else {
                         throw new Error('Unexpected Layer '+ entityData.layer);
                     }
@@ -36,6 +41,10 @@ module.exports = {
                     throw new Error('Did not receive Entity from server by id '+addEntity.id);
                 }
             }
+            terrainLayer.addSystem(backgroundDrawSystem);
+            playerLayer.addSystem(playerDrawSystem);
+            World.pushLayer(terrainLayer);
+            World.pushLayer(playerLayer);
         });
     },
 
