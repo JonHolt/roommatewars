@@ -23,15 +23,13 @@ module.exports={
 
 
 ScreenFactory.showGame(socket);
-},{"./config.json":1,"./screen-factory.js":3,"psykick2d":16}],3:[function(require,module,exports){
+},{"./config.json":1,"./screen-factory.js":3,"psykick2d":18}],3:[function(require,module,exports){
 'use strict';
 
 var World = require('psykick2d').World,
     Helper = require('psykick2d').Helper,
-    Component = require('psykick2d').Component,
+    Component = require('psykick2d').Component;
 
-    terrainLayer = World.createLayer(),
-    playerLayer = World.createLayer();
 
 module.exports = {
     showLobby: function(sock) {
@@ -40,6 +38,16 @@ module.exports = {
 
     showGame: function(sock) {
 
+        var terrainLayer = World.createLayer(),
+            playerLayer = World.createLayer(),
+        //Sprite = require('psykick2d').Systems.Render.Sprite,
+            ColoredRect = require('psykick2d').Systems.Render.ColoredRect,
+            playerDrawSystem = new ColoredRect(),
+            BackGround = require('./systems/render/background-render.js'),
+            backgroundDrawSystem = new BackGround(terrainLayer),
+            KeySendSystem = require('./systems/behavior/key-press.js');
+
+        //initialize the game state with information from the server.
         sock.on('start',function(data){
             var len = Object.keys(data).length;
             for(var i = 0; i < len; i++){
@@ -49,17 +57,48 @@ module.exports = {
                     for(var key in entityData.components){
                         var addComponent = new Component();
                         addComponent = Helper.defaults(addComponent, entityData.components[key]);
-                        addEntity.addComponent(addComponent);
+                        addEntity.addComponentAs(addComponent,key);
                     }
                     if(entityData.layer === 'terrain'){
-                        terrainLayer.addEntity(addEntity); //Change this to add to system instead
+                        backgroundDrawSystem.addEntity(addEntity); //Change this to add to system instead
                     } else if(entityData.layer === 'player'){
-                        playerLayer.addEntity(addEntity); //Change these to add to systems instead
+                        playerDrawSystem.addEntity(addEntity); //Change these to add to systems instead
                     } else {
                         throw new Error('Unexpected Layer '+ entityData.layer);
                     }
                 } else {
                     throw new Error('Did not receive Entity from server by id '+addEntity.id);
+                }
+            }
+            terrainLayer.addSystem(backgroundDrawSystem);
+            playerLayer.addSystem(playerDrawSystem);
+            playerLayer.addSystem(new KeySendSystem(sock));
+            World.pushLayer(terrainLayer);
+            World.pushLayer(playerLayer);
+        });
+
+        //update the game state using the diffs from the server
+        sock.on('update',function(data){
+            for(var key in data){
+                var components = key.components;
+                if(key.layer === 'terrain'){
+                    var changeEntity = backgroundDrawSystem.entities[key];
+                    for(var comp in components){
+                        var changeComponent = changeEntity.getComponent(comp);
+                        changeComponent = Helper.defaults(components[comp],changeComponent);
+                        changeEntity.addComponentAs(comp);
+                    }
+                    terrainLayer.visible = true;
+                } else if(key.layer === 'player'){
+                    var changeEntity = playerDrawSystem.entities[key];
+                    for(var comp in components){
+                        var changeComponent = changeEntity.getComponent(comp);
+                        changeComponent = Helper.defaults(components[comp],changeComponent);
+                        changeEntity.addComponentAs(comp);
+                    }
+                    playerLayer.visible = true;
+                } else {
+                    throw new Error('Unexpected Layer '+ key.layer);
                 }
             }
         });
@@ -73,7 +112,93 @@ module.exports = {
 //Notes:
 // var component = new Component();
 // component = Helper.defaults(component, componentData);
-},{"psykick2d":16}],4:[function(require,module,exports){
+},{"./systems/behavior/key-press.js":4,"./systems/render/background-render.js":5,"psykick2d":18}],4:[function(require,module,exports){
+'use strict';
+
+/*
+This here code is for taking key input and sending it to the server in question. It will utilize the shit out of the glorious ?: operator.
+ */
+
+var Helper = require('psykick2d').Helper,
+    BehaviorSystem = require('psykick2d').BehaviorSystem,
+    Keys = require('psykick2d').Keys;
+
+/**
+ * Sends KeyPresses to server
+ * @param sock  socket connected to server
+ * @constructor
+ */
+var KeyPress = function(sock){
+    BehaviorSystem.call(this);
+    this.socket = sock;
+};
+
+Helper.inherit(KeyPress,BehaviorSystem);
+
+
+KeyPress.prototype.update = function(){
+    var sendKeys = {
+        w:Helper.isKeyDown(Keys.W),
+        a:Helper.isKeyDown(Keys.A),
+        s:Helper.isKeyDown(Keys.S),
+        d:Helper.isKeyDown(Keys.D),
+        left:Helper.isKeyDown(Keys.Left),
+        up:Helper.isKeyDown(Keys.Up),
+        right:Helper.isKeyDown(Keys.Right),
+        down:Helper.isKeyDown(Keys.Down)
+    };
+    var send = false;
+    for(var key in sendKeys){
+        if(sendKeys[key]===true){
+            send = true;
+        }
+    }
+    if(send){
+        this.socket.emit('keys',sendKeys);
+    }
+};
+
+module.exports = KeyPress;
+},{"psykick2d":18}],5:[function(require,module,exports){
+'use strict';
+
+/*
+ This is for rendering statics like background walls and destructible walls. It automatically sets itself to invisible after each draw
+ so that it will only draw when you tell it to, which should be after diffs have been added.
+ */
+var Helper = require('psykick2d').Helper,
+    RenderSystem = require('psykick2d').RenderSystem;
+
+/**
+ * Renders a background image for performance
+ *
+ * @param layer the parent layer of this system.
+ * @inherit RenderSystem
+ * @constructor
+ */
+var BackgroundRender = function(layer){
+    RenderSystem.call(this);
+    this.requiredComponents = ['SpriteSheet','Position'];
+    this.layer = layer;
+    //this.fakeCanvas = Mike's mom's continuous rolls of back-fat.
+}
+
+Helper.inherit(BackgroundRender,RenderSystem);
+
+/**
+ * Sets up and image for the static background at first, then just
+ * translates that image when the camera moves. Will re-render the image
+ * when destructible terrain has changed state.
+ * @param c
+ */
+BackgroundRender.prototype.draw = function(c){
+    //TODO make ^^ that happen.
+
+
+};
+
+module.exports = BackgroundRender;
+},{"psykick2d":18}],6:[function(require,module,exports){
 'use strict';
 
 var System = require('./system.js'),
@@ -144,7 +269,7 @@ BehaviorSystem.prototype.removeEntity = function(entity) {
 BehaviorSystem.prototype.update = function() {};
 
 module.exports = BehaviorSystem;
-},{"./helper.js":13,"./system.js":20}],5:[function(require,module,exports){
+},{"./helper.js":15,"./system.js":22}],7:[function(require,module,exports){
 'use strict';
 
 /**
@@ -169,7 +294,7 @@ Camera.prototype.toString = function() {
 };
 
 module.exports = Camera;
-},{}],6:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 'use strict';
 
 /**
@@ -182,7 +307,7 @@ var Component = function() {
 };
 
 module.exports = Component;
-},{}],7:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 'use strict';
 
 var Component = require('../../component.js'),
@@ -240,7 +365,7 @@ Animation.prototype.getFrame = function(delta) {
 };
 
 module.exports = Animation;
-},{"../../component.js":6,"../../helper.js":13}],8:[function(require,module,exports){
+},{"../../component.js":8,"../../helper.js":15}],10:[function(require,module,exports){
 'use strict';
 
 var Component = require('../../component.js'),
@@ -266,7 +391,7 @@ var Color = function(options) {
 Helper.inherit(Color, Component);
 
 module.exports = Color;
-},{"../../component.js":6,"../../helper.js":13}],9:[function(require,module,exports){
+},{"../../component.js":8,"../../helper.js":15}],11:[function(require,module,exports){
 'use strict';
 
 var Component = require('../../component.js'),
@@ -387,7 +512,7 @@ SpriteSheet.prototype.getOffset = function(frameX, frameY) {
 };
 
 module.exports = SpriteSheet;
-},{"../../component.js":6,"../../helper.js":13}],10:[function(require,module,exports){
+},{"../../component.js":8,"../../helper.js":15}],12:[function(require,module,exports){
 'use strict';
 
 var Component = require('../../component.js'),
@@ -424,7 +549,7 @@ var RectPhysicsBody = function(options) {
 Helper.inherit(RectPhysicsBody, Component);
 
 module.exports = RectPhysicsBody;
-},{"../../component.js":6,"../../helper.js":13}],11:[function(require,module,exports){
+},{"../../component.js":8,"../../helper.js":15}],13:[function(require,module,exports){
 'use strict';
 
 var Component = require('../../component.js'),
@@ -455,7 +580,7 @@ var Rectangle = function(options) {
 Helper.inherit(Rectangle, Component);
 
 module.exports = Rectangle;
-},{"../../component.js":6,"../../helper.js":13}],12:[function(require,module,exports){
+},{"../../component.js":8,"../../helper.js":15}],14:[function(require,module,exports){
 'use strict';
 
 var Component = require('./component.js');
@@ -477,6 +602,18 @@ var Entity = function(id) {
 Entity.prototype.addComponent = function(component) {
     if (component instanceof Component) {
         this.components[component.NAME] = component;
+    }
+};
+
+/**
+ * Adds a Component marked as a given type
+ * This can be used to use one component for multiple things i.e. physics body and a rectangle
+ * @param {Component} component
+ * @param {string} componentType Type to mark it as
+ */
+Entity.prototype.addComponentAs = function(component, componentType) {
+    if (component instanceof Component) {
+        this.components[componentType] = component;
     }
 };
 
@@ -515,10 +652,12 @@ Entity.prototype.hasComponent = function(componentName) {
 };
 
 module.exports = Entity;
-},{"./component.js":6}],13:[function(require,module,exports){
+},{"./component.js":8}],15:[function(require,module,exports){
 'use strict';
 
+/* global window: true */
 var
+    win = window || null,
     // Save bytes in the minified version (see Underscore.js)
     ArrayProto          = Array.prototype,
     ObjProto            = Object.prototype,
@@ -531,20 +670,22 @@ var
     keysDown = {};
 
 // Capture keyboard events
-window.onkeydown = function(e) {
-    keysDown[e.keyCode] = {
-        pressed: true,
-        shift:   e.shiftKey,
-        ctrl:    e.ctrlKey,
-        alt:     e.altKey
+if (win) {
+    win.onkeydown = function(e) {
+        keysDown[e.keyCode] = {
+            pressed: true,
+            shift:   e.shiftKey,
+            ctrl:    e.ctrlKey,
+            alt:     e.altKey
+        };
     };
-};
 
-window.onkeyup = function(e) {
-    if (keysDown.hasOwnProperty(e.keyCode)) {
-        keysDown[e.keyCode].pressed = false;
-    }
-};
+    win.onkeyup = function(e) {
+        if (keysDown.hasOwnProperty(e.keyCode)) {
+            keysDown[e.keyCode].pressed = false;
+        }
+    };
+}
 
 var Helper = {
     /**
@@ -627,7 +768,7 @@ var Helper = {
 };
 
 module.exports = Helper;
-},{}],14:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 'use strict';
 
 /**
@@ -806,7 +947,7 @@ CollisionGrid.prototype.getCollisions = function(entity) {
 };
 
 module.exports = CollisionGrid;
-},{}],15:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 'use strict';
 
 /**
@@ -959,18 +1100,19 @@ QuadTree.prototype.removeEntity = function(entity, body) {
  */
 QuadTree.prototype.moveEntity = function(entity, deltaPosition) {
     var body = entity.getComponent('RectPhysicsBody'),
-        oldXCell = Math.floor(body.x / this.cellSize),
-        oldYCell = Math.floor(body.y / this.cellSize);
-
-    body.x += deltaPosition.x;
-    body.y += deltaPosition.y;
-
-    var newXCell = Math.floor(body.x / this.cellSize),
-        newYCell = Math.floor(body.y / this.cellSize);
+        oldXCell = (body.x / this.cellSize) | 0,
+        oldYCell = (body.y / this.cellSize) | 0,
+        newXCell = ( (body.x + deltaPosition.x) / this.cellSize ) | 0,
+        newYCell = ( (body.y + deltaPosition.y) / this.cellSize ) | 0;
 
     if (oldXCell !== newXCell || oldYCell !== newYCell) {
         this.removeEntity(entity, body);
+        body.x += deltaPosition.x;
+        body.y += deltaPosition.y;
         this.addEntity(entity, body);
+    } else {
+        body.x += deltaPosition.x;
+        body.y += deltaPosition.y;
     }
 };
 
@@ -1023,7 +1165,7 @@ QuadTree.prototype.getCollisions = function(entity, body) {
 };
 
 module.exports = QuadTree;
-},{}],16:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 module.exports = {
     BehaviorSystem: require('./behavior-system.js'),
     Camera: require('./camera.js'),
@@ -1065,7 +1207,7 @@ module.exports = {
     },
     World: require('./world.js')
 };
-},{"./behavior-system.js":4,"./camera.js":5,"./component.js":6,"./components/gfx/animation.js":7,"./components/gfx/color.js":8,"./components/gfx/sprite-sheet.js":9,"./components/physics/rect-physics-body.js":10,"./components/shape/rectangle.js":11,"./entity.js":12,"./helper.js":13,"./helpers/collision-grid.js":14,"./helpers/quad-tree.js":15,"./keys.js":17,"./layer.js":18,"./render-system.js":19,"./system.js":20,"./systems/behavior/animate.js":21,"./systems/behavior/physics/platformer.js":22,"./systems/render/colored-rect.js":23,"./systems/render/sprite.js":24,"./world.js":25}],17:[function(require,module,exports){
+},{"./behavior-system.js":6,"./camera.js":7,"./component.js":8,"./components/gfx/animation.js":9,"./components/gfx/color.js":10,"./components/gfx/sprite-sheet.js":11,"./components/physics/rect-physics-body.js":12,"./components/shape/rectangle.js":13,"./entity.js":14,"./helper.js":15,"./helpers/collision-grid.js":16,"./helpers/quad-tree.js":17,"./keys.js":19,"./layer.js":20,"./render-system.js":21,"./system.js":22,"./systems/behavior/animate.js":23,"./systems/behavior/physics/platformer.js":24,"./systems/render/colored-rect.js":25,"./systems/render/sprite.js":26,"./world.js":27}],19:[function(require,module,exports){
 /**
  * A simple reference point for key codes
  * @type {Object}
@@ -1092,7 +1234,7 @@ module.exports = {
     // Common keys
     Space: 32, Enter: 13, Tab: 9, Esc: 27, Backspace: 8
 };
-},{}],18:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 'use strict';
 
 var System = require('./system.js'),
@@ -1105,6 +1247,7 @@ var System = require('./system.js'),
  * @param {Object}  options
  * @param {number}  options.id          - Unique ID assigned by the World
  * @param {Element} options.container   - Element which houses the Layer
+ * @param {boolean} options.serverMode  - If true, a canvas will not be made
  */
 var Layer = function(options) {
     this.id = options.id;
@@ -1116,16 +1259,18 @@ var Layer = function(options) {
     this.active = true;
 
     // Create a new canvas to draw on
+    if (!options.serverMode) {
     var canvas = document.createElement('canvas');
-    canvas.width = parseInt(options.container.style.width, 10);
-    canvas.height = parseInt(options.container.style.height, 10);
-    canvas.setAttribute('id', 'psykick-layer-' + options.id);
-    canvas.style.position = 'absolute';
-    canvas.style.top = '0px';
-    canvas.style.left = '0px';
-    canvas.style.zIndex = 0;
+        canvas.width = parseInt(options.container.style.width, 10);
+        canvas.height = parseInt(options.container.style.height, 10);
+        canvas.setAttribute('id', 'psykick-layer-' + options.id);
+        canvas.style.position = 'absolute';
+        canvas.style.top = '0px';
+        canvas.style.left = '0px';
+        canvas.style.zIndex = 0;
 
-    this.c = canvas.getContext('2d');
+        this.c = canvas.getContext('2d');
+    }
 };
 
 /**
@@ -1199,7 +1344,7 @@ Layer.prototype.removeSystem = function(system) {
  */
 Layer.prototype.draw = function() {
     // If the node doesn't exist, don't even try to draw
-    if (this.c.canvas.parentNode === null) {
+    if (!this.c || this.c.canvas.parentNode === null) {
         return;
     }
 
@@ -1245,7 +1390,7 @@ Layer.prototype.update = function(delta) {
 };
 
 module.exports = Layer;
-},{"./behavior-system.js":4,"./render-system.js":19,"./system.js":20}],19:[function(require,module,exports){
+},{"./behavior-system.js":6,"./render-system.js":21,"./system.js":22}],21:[function(require,module,exports){
 'use strict';
 
 var System = require('./system.js'),
@@ -1313,7 +1458,7 @@ RenderSystem.prototype.removeEntity = function(entity) {
 RenderSystem.prototype.draw = function() {};
 
 module.exports = RenderSystem;
-},{"./helper.js":13,"./system.js":20}],20:[function(require,module,exports){
+},{"./helper.js":15,"./system.js":22}],22:[function(require,module,exports){
 'use strict';
 
 var Entity = require('./entity.js'),
@@ -1370,7 +1515,7 @@ System.prototype.removeEntity = function(entity) {
 };
 
 module.exports = System;
-},{"./entity.js":12,"./helper.js":13}],21:[function(require,module,exports){
+},{"./entity.js":14,"./helper.js":15}],23:[function(require,module,exports){
 'use strict';
 
 var Helper = require('../../helper.js'),
@@ -1410,7 +1555,7 @@ Animate.prototype.update = function(delta) {
 };
 
 module.exports = Animate;
-},{"../../behavior-system.js":4,"../../helper.js":13}],22:[function(require,module,exports){
+},{"../../behavior-system.js":6,"../../helper.js":15}],24:[function(require,module,exports){
 'use strict';
 
 var Helper = require('../../../helper.js'),
@@ -1602,7 +1747,7 @@ Platformer.prototype.update = function(delta) {
 };
 
 module.exports = Platformer;
-},{"../../../behavior-system.js":4,"../../../helper.js":13,"../../../helpers/quad-tree.js":15}],23:[function(require,module,exports){
+},{"../../../behavior-system.js":6,"../../../helper.js":15,"../../../helpers/quad-tree.js":17}],25:[function(require,module,exports){
 'use strict';
 
 var Helper = require('../../helper.js'),
@@ -1634,7 +1779,7 @@ ColoredRect.prototype.draw = function(c) {
 };
 
 module.exports = ColoredRect;
-},{"../../helper.js":13,"../../render-system.js":19}],24:[function(require,module,exports){
+},{"../../helper.js":15,"../../render-system.js":21}],26:[function(require,module,exports){
 'use strict';
 
 var Helper = require('../../helper.js'),
@@ -1682,7 +1827,7 @@ Sprite.prototype.draw = function(c) {
 };
 
 module.exports = Sprite;
-},{"../../helper.js":13,"../../render-system.js":19}],25:[function(require,module,exports){
+},{"../../helper.js":15,"../../render-system.js":21}],27:[function(require,module,exports){
 'use strict';
 
 var Entity = require('./entity.js'),
@@ -1702,9 +1847,6 @@ var Entity = require('./entity.js'),
     // Layer ID counter
     nextLayerID = 0,
 
-    // Collection of layers
-    layers = {},
-
     // Layers in the order they will be drawn/updated
     layersInDrawOrder = [],
 
@@ -1714,7 +1856,10 @@ var Entity = require('./entity.js'),
         afterUpdate: [],
         beforeDraw: [],
         afterDraw: []
-    };
+    },
+
+    // If true, will not access the window or DOM
+    serverMode = false;
 
 var World = {
     /**
@@ -1727,43 +1872,56 @@ var World = {
      */
     init: function(options) {
         var self = this,
-            backgroundEl = document.createElement('div'),
             gameTime = new Date(),
             defaults = {
-                canvasContainer: document.getElementById('psykick'),
-                width: window.innerWidth,
-                height: window.innerHeight,
-                backgroundColor: '#000'
-            };
+                canvasContainer: null,
+                width: 800,
+                height: 600,
+                backgroundColor: '#000',
+                serverMode: false
+            },
+            backgroundEl,
+            requestAnimationFrame;
 
         options = Helper.defaults(options, defaults);
-        if (typeof options.canvasContainer === 'string') {
-            options.canvasContainer = document.getElementById(options.canvasContainer);
+        serverMode = options.serverMode;
+        if (!serverMode) {
+            backgroundEl = document.createElement('div');
+            if (options.canvasContainer === null) {
+                options.canvasContainer = document.getElementById('psykick');
+            } else if (typeof options.canvasContainer === 'string') {
+                options.canvasContainer = document.getElementById(options.canvasContainer);
+            }
+
+            // Make sure the container will correctly house our canvases
+            canvasContainer = options.canvasContainer;
+            canvasContainer.style.position = 'relative';
+            canvasContainer.style.width = options.width + 'px';
+            canvasContainer.style.height = options.height + 'px';
+            canvasContainer.style.overflow = 'hidden';
+
+            // Setup a basic element to be the background color
+            backgroundEl.setAttribute('id', 'psykick-layer-base');
+            backgroundEl.style.position = 'absolute';
+            backgroundEl.style.top = '0px';
+            backgroundEl.style.left = '0px';
+            backgroundEl.style.zIndex = 0;
+            backgroundEl.style.width = options.width + 'px';
+            backgroundEl.style.height = options.height + 'px';
+            backgroundEl.style.backgroundColor = options.backgroundColor;
+
+            canvasContainer.appendChild(backgroundEl);
+
+            requestAnimationFrame = window.requestAnimationFrame ||
+                window.mozRequestAnimationFrame ||
+                window.webkitRequestAnimationFrame ||
+                window.msRequestAnimationFrame;
+        } else {
+            requestAnimationFrame = function(callback) {
+                setTimeout(callback, 1000 / 60);
+            };
         }
 
-        // Make sure the container will correctly house our canvases
-        canvasContainer = options.canvasContainer;
-        canvasContainer.style.position = 'relative';
-        canvasContainer.style.width = options.width + 'px';
-        canvasContainer.style.height = options.height + 'px';
-        canvasContainer.style.overflow = 'hidden';
-
-        // Setup a basic element to be the background color
-        backgroundEl.setAttribute('id', 'psykick-layer-base');
-        backgroundEl.style.position = 'absolute';
-        backgroundEl.style.top = '0px';
-        backgroundEl.style.left = '0px';
-        backgroundEl.style.zIndex = 0;
-        backgroundEl.style.width = options.width + 'px';
-        backgroundEl.style.height = options.height + 'px';
-        backgroundEl.style.backgroundColor = options.backgroundColor;
-
-        canvasContainer.appendChild(backgroundEl);
-
-        var requestAnimationFrame = window.requestAnimationFrame ||
-                                    window.mozRequestAnimationFrame ||
-                                    window.webkitRequestAnimationFrame ||
-                                    window.msRequestAnimationFrame;
         gameLoop = function() {
             var delta = (new Date() - gameTime) / 1000;
             self.update(delta);
@@ -1787,14 +1945,11 @@ var World = {
      * @returns {Layer}
      */
     createLayer: function() {
-        var self = this,
-            layer = new Layer({
-                id: nextLayerID++,
-                container: canvasContainer,
-                world: self
-            });
-        layers[layer.id] = layer;
-        return layer;
+        return new Layer({
+            id: nextLayerID++,
+            container: canvasContainer,
+            serverMode: serverMode
+        });
     },
 
     /**
@@ -1809,8 +1964,10 @@ var World = {
 
         if (layersInDrawOrder.indexOf(layer) === -1) {
             layersInDrawOrder.push(layer);
-            layer.setZIndex(layersInDrawOrder.length);
-            layer.restoreCanvas();
+            if (!serverMode) {
+                layer.setZIndex(layersInDrawOrder.length);
+                layer.restoreCanvas();
+            }
             return true;
         } else {
             return false;
@@ -1828,21 +1985,10 @@ var World = {
 
         var top = layersInDrawOrder[layersInDrawOrder.length - 1];
         layersInDrawOrder.pop();
-        top.removeCanvas();
-        return top;
-    },
-
-    /**
-     * Returns a Layer based on it's ID
-     * @param {number} layerID
-     * @returns {Layer|null}
-     */
-    getLayer: function(layerID) {
-        if (Helper.has(layers, layerID)) {
-            return layers[layerID];
-        } else {
-            return null;
+        if (!serverMode) {
+            top.removeCanvas();
         }
+        return top;
     },
 
     /**
@@ -1932,8 +2078,20 @@ var World = {
      */
     removeAllListeners: function(eventType) {
         eventHandlers[eventType] = [];
+    },
+
+    /**
+     * Resets the state of the world
+     * All Layers are removed
+     * ID counters return to 0
+     */
+    reset: function() {
+        while (this.popLayer()) {}
+        layersInDrawOrder = [];
+        nextEntityID = 0;
+        nextLayerID = 0;
     }
 };
 
 module.exports = World;
-},{"./entity.js":12,"./helper.js":13,"./layer.js":18}]},{},[2]);
+},{"./entity.js":14,"./helper.js":15,"./layer.js":20}]},{},[2]);

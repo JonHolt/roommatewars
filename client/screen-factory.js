@@ -2,15 +2,8 @@
 
 var World = require('psykick2d').World,
     Helper = require('psykick2d').Helper,
-    Component = require('psykick2d').Component,
+    Component = require('psykick2d').Component;
 
-    Sprite = require('psykick2d').Systems.Render.Sprite,
-    playerDrawSystem = new Sprite(),
-    BackGround = require('./systems/render/background-render.js'),
-    backgroundDrawSystem = new BackGround(),
-
-    terrainLayer = World.createLayer(),
-    playerLayer = World.createLayer();
 
 module.exports = {
     showLobby: function(sock) {
@@ -19,6 +12,16 @@ module.exports = {
 
     showGame: function(sock) {
 
+        var terrainLayer = World.createLayer(),
+            playerLayer = World.createLayer(),
+        //Sprite = require('psykick2d').Systems.Render.Sprite,
+            ColoredRect = require('psykick2d').Systems.Render.ColoredRect,
+            playerDrawSystem = new ColoredRect(),
+            BackGround = require('./systems/render/background-render.js'),
+            backgroundDrawSystem = new BackGround(terrainLayer),
+            KeySendSystem = require('./systems/behavior/key-press.js');
+
+        //initialize the game state with information from the server.
         sock.on('start',function(data){
             var len = Object.keys(data).length;
             for(var i = 0; i < len; i++){
@@ -28,7 +31,7 @@ module.exports = {
                     for(var key in entityData.components){
                         var addComponent = new Component();
                         addComponent = Helper.defaults(addComponent, entityData.components[key]);
-                        addEntity.addComponent(addComponent);
+                        addEntity.addComponentAs(addComponent,key);
                     }
                     if(entityData.layer === 'terrain'){
                         backgroundDrawSystem.addEntity(addEntity); //Change this to add to system instead
@@ -43,8 +46,35 @@ module.exports = {
             }
             terrainLayer.addSystem(backgroundDrawSystem);
             playerLayer.addSystem(playerDrawSystem);
+            playerLayer.addSystem(new KeySendSystem(sock));
             World.pushLayer(terrainLayer);
             World.pushLayer(playerLayer);
+        });
+
+        //update the game state using the diffs from the server
+        sock.on('update',function(data){
+            for(var key in data){
+                var components = key.components;
+                if(key.layer === 'terrain'){
+                    var changeEntity = backgroundDrawSystem.entities[key];
+                    for(var comp in components){
+                        var changeComponent = changeEntity.getComponent(comp);
+                        changeComponent = Helper.defaults(components[comp],changeComponent);
+                        changeEntity.addComponentAs(comp);
+                    }
+                    terrainLayer.visible = true;
+                } else if(key.layer === 'player'){
+                    var changeEntity = playerDrawSystem.entities[key];
+                    for(var comp in components){
+                        var changeComponent = changeEntity.getComponent(comp);
+                        changeComponent = Helper.defaults(components[comp],changeComponent);
+                        changeEntity.addComponentAs(comp);
+                    }
+                    playerLayer.visible = true;
+                } else {
+                    throw new Error('Unexpected Layer '+ key.layer);
+                }
+            }
         });
     },
 

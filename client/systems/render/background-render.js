@@ -4,18 +4,20 @@
  This is for rendering statics like background walls and destructible walls. It automatically sets itself to invisible after each draw
  so that it will only draw when you tell it to, which should be after diffs have been added.
  */
-var Helper = require('../../helper.js'),
-    RenderSystem = require('../../render-system.js');
+var Helper = require('psykick2d').Helper,
+    RenderSystem = require('psykick2d').RenderSystem;
 
 /**
  * Renders a background image for performance
  *
+ * @param layer the parent layer of this system.
  * @inherit RenderSystem
  * @constructor
  */
-var BackgroundRender = function(){
+var BackgroundRender = function(layer){
     RenderSystem.call(this);
     this.requiredComponents = ['SpriteSheet','Position'];
+    this.layer = layer;
     //this.fakeCanvas = Mike's mom's continuous rolls of back-fat.
 }
 
@@ -29,6 +31,8 @@ Helper.inherit(BackgroundRender,RenderSystem);
  */
 BackgroundRender.prototype.draw = function(c){
     //TODO make ^^ that happen.
+
+
 };
 
 module.exports = BackgroundRender;
