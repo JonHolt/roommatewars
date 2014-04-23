@@ -1,8 +1,10 @@
 'use strict';
 
-var World = require('psykick2d').World,
+var PlayerManager = require('./player-manager.js'),
+    World = require('psykick2d').World,
 
     Components = {
+        SpriteSheet: require('psykick2d').Components.GFX.SpriteSheet,
         RectPhysicsBody: require('psykick2d').Components.Physics.RectPhysicsBody,
         Color: require('psykick2d').Components.GFX.Color
     },
@@ -33,8 +35,38 @@ var createWall = function(data) {
     wall.addComponent(rectComponent);
     wall.addComponentAs(rectComponent, 'Rectangle');
     wall.addComponent(colorComponent);
-    console.log(wall.id);
     return wall;
+};
+var createDestructibleWall = function(data) {
+    // Use this until we decide how to do them
+    return createWall(data);
+};
+var createPlayer = function(data) {
+    var playerData = null,
+        playerCount = 0;
+    PlayerManager.forEachPlayer(function(p) {
+        if (playerData !== null) {
+            return;
+        }
+
+        if (p.id === null) {
+            playerData = p;
+            playerCount += 1;
+        }
+    });
+
+    var player = World.createEntity(),
+        rectComponent = new Components.RectPhysicsBody({
+            x: data.x,
+            y: data.y,
+            w: 32,
+            h: 32
+        });
+    player.addComponent(rectComponent);
+    player.addComponentAs(rectComponent, 'Rectangle');
+    player.components['SpriteSheet'] = 'Player' + playerCount;
+    playerData.id = player.id;
+    return player;
 };
 
 module.exports = {
@@ -60,18 +92,46 @@ module.exports = {
                     case 'walls':
                         createEntity = createWall;
                         break;
+                    case 'destructibleWalls':
+                        createEntity = createDestructibleWall;
+                        break;
+
+                    case 'spawnPoints':
+                        createEntity = createPlayer;
+                        break;
                 }
 
                 for (var i = 0, len = entities.length; i < len; i++) {
-                    var newEntity = createEntity(entities[i]);
+                    var newEntity = createEntity(entities[i]),
+                        components = {};
+                    for (var componentName in newEntity.components) {
+                        if (componentName === 'RectPhysicsBody') {
+                            continue;
+                        }
+
+                        var componentData = newEntity.components[componentName];
+                        if (componentName === 'Rectangle') {
+                            components.Rectangle = {
+                                x: componentData.x,
+                                y: componentData.y,
+                                w: componentData.w,
+                                h: componentData.h
+                            };
+                        } else {
+                            components[componentName] = componentData;
+                        }
+                    }
                     clientData[newEntity.id] = {
                         layer: layerName,
-                        components: newEntity.components
+                        components: components
                     };
                 }
             }
         }
 
-        return JSON.stringify(clientData);
+        PlayerManager.broadcast('start', clientData);
+        PlayerManager.forEachPlayer(function(player) {
+            player.socket.emit('playerID', player.id);
+        });
     }
 };
