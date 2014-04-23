@@ -3,6 +3,8 @@
 var PlayerManager = require('./player-manager.js'),
     World = require('psykick2d').World,
 
+    PlayerInput = require('./systems/player-input.js'),
+
     Components = {
         SpriteSheet: require('psykick2d').Components.GFX.SpriteSheet,
         RectPhysicsBody: require('psykick2d').Components.Physics.RectPhysicsBody,
@@ -28,13 +30,10 @@ var createWall = function(data) {
             y: y,
             w: w,
             h: h
-        }),
-        colorComponent = new Components.Color({
-            colors: ['#FFF']
         });
     wall.addComponent(rectComponent);
     wall.addComponentAs(rectComponent, 'Rectangle');
-    wall.addComponent(colorComponent);
+    wall.components['SpriteSheet'] = 'Wall';
     return wall;
 };
 var createDestructibleWall = function(data) {
@@ -65,6 +64,7 @@ var createPlayer = function(data) {
     player.addComponent(rectComponent);
     player.addComponentAs(rectComponent, 'Rectangle');
     player.components['SpriteSheet'] = 'Player' + playerCount;
+    //player.components['SpriteSheet'] = 'Bullet';
     playerData.id = player.id;
     return player;
 };
@@ -74,6 +74,7 @@ module.exports = {
         var mapData = require('./maps/basic.json'),
             terrainLayer = World.createLayer(),
             playerLayer = World.createLayer(),
+            playerInputSystem = new PlayerInput(),
             clientData = {};
 
         for (var layerName in mapData) {
@@ -104,6 +105,11 @@ module.exports = {
                 for (var i = 0, len = entities.length; i < len; i++) {
                     var newEntity = createEntity(entities[i]),
                         components = {};
+
+                    if (entityType === 'spawnPoints') {
+                        playerInputSystem.addEntity(newEntity);
+                    }
+
                     for (var componentName in newEntity.components) {
                         if (componentName === 'RectPhysicsBody') {
                             continue;
@@ -128,6 +134,9 @@ module.exports = {
                 }
             }
         }
+
+        playerLayer.addSystem(playerInputSystem);
+        World.pushLayer(playerLayer);
 
         PlayerManager.broadcast('start', clientData);
         PlayerManager.forEachPlayer(function(player) {

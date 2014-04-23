@@ -18,6 +18,7 @@ io.sockets.on('connection', function(socket) {
 
     // For testing purposes
     Game.startGame();
+    currentMode = GameModes.Game;
 });
 io.sockets.on('readyState', function() {
     if (currentMode === GameModes.Game) {
@@ -25,5 +26,6 @@ io.sockets.on('readyState', function() {
     }
     if (PlayerManager.allPlayersAreReady()) {
         Game.startGame();
+        currentMode = GameModes.Game;
     }
 });
