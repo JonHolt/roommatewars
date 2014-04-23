@@ -23,13 +23,42 @@ module.exports={
 
 
 ScreenFactory.showGame(socket);
-},{"./config.json":1,"./screen-factory.js":3,"psykick2d":18}],3:[function(require,module,exports){
+},{"./config.json":1,"./screen-factory.js":4,"psykick2d":19}],3:[function(require,module,exports){
+/**
+ * Created by Jonathan on 4/22/14.
+ */
+'use strict';
+
+/*
+This will translate the camera where it needs to be... Hopefully.
+ */
+
+var PlayerCam = function(playerRect){
+    this.player = playerRect;
+    this.x = 0;
+    this.y = 0;
+    this.scale = 1.5;
+};
+
+PlayerCam.prototype.render = function(c){
+    //450 is half the width of the screen
+    this.x = -this.player.x + (450 / this.scale) - (this.player.w / 2);
+    //300 is half the height
+    this.y = -this.player.y + (300 / this.scale) - (this.player.h / 2);
+
+    c.scale(this.scale, this.scale);
+    c.translate(this.x, this.y);
+    //console.log(this.x + ','+ this.y);
+};
+
+module.exports = PlayerCam;
+},{}],4:[function(require,module,exports){
 'use strict';
 
 var World = require('psykick2d').World,
     Helper = require('psykick2d').Helper,
     Component = require('psykick2d').Component,
-    SpriteSheet = require('psykick2d').Components.SpriteSheet;
+    SpriteSheet = require('psykick2d').Components.GFX.SpriteSheet;
 
 
 module.exports = {
@@ -43,12 +72,16 @@ module.exports = {
             playerLayer = World.createLayer(),
 
             DirtySprite = require('psykick2d').Systems.Render.Sprite,
+            //ColoredRect = require('psykick2d').Systems.Render.ColoredRect,
             playerDrawSystem = new DirtySprite(playerLayer),
             BackGround = require('./systems/render/background-render.js'),
             backgroundDrawSystem = new BackGround(terrainLayer),
-            KeySendSystem = require('./systems/behavior/key-press.js');
+            KeySendSystem = require('./systems/behavior/key-press.js'),
+
+            PlayerCam = require('./player-camera.js');
 
         //create reusable SpriteSheet components;
+
         var sprites = {};
         sprites['Player1'] = new SpriteSheet({
             src:'./img/Player1.png',
@@ -85,6 +118,14 @@ module.exports = {
             frameWidth: 32,
             frameHeight:32
         });
+        sprites['Bullet'] = new SpriteSheet({
+            src:'./img/Bullet.png',
+            width: 32,
+            height: 52,
+            frameWidth: 32,
+            frameHeight:52
+        });
+        sprites['Wall'].repeat = 'repeat';
 
         //initialize the game state with information from the server.
         sock.on('start',function(data){
@@ -102,6 +143,7 @@ module.exports = {
                             addEntity.addComponentAs(addComponent,key);
                         }
                     }
+                    console.log(addEntity.getComponent('Rectangle'));
                     if(entityData.layer === 'terrain'){
                         backgroundDrawSystem.addEntity(addEntity);
                     } else if(entityData.layer === 'player'){
@@ -140,10 +182,19 @@ module.exports = {
                         changeEntity.addComponentAs(comp);
                     }
                     playerLayer.visible = true;
+                    terrainLayer.visible = true;
                 } else {
                     throw new Error('Unexpected Layer '+ key.layer);
                 }
             }
+        });
+
+        //An event to find out who I am
+        sock.on('playerID',function(data){
+            var player = playerDrawSystem.entities[data];
+            var cam = new PlayerCam(player.getComponent('Rectangle'));
+            playerLayer.camera = cam;
+            backgroundDrawSystem.camera = cam;
         });
     },
 
@@ -155,7 +206,7 @@ module.exports = {
 //Notes:
 // var component = new Component();
 // component = Helper.defaults(component, componentData);
-},{"./systems/behavior/key-press.js":4,"./systems/render/background-render.js":5,"psykick2d":18}],4:[function(require,module,exports){
+},{"./player-camera.js":3,"./systems/behavior/key-press.js":5,"./systems/render/background-render.js":6,"psykick2d":19}],5:[function(require,module,exports){
 'use strict';
 
 /*
@@ -202,7 +253,7 @@ KeyPress.prototype.update = function(){
 };
 
 module.exports = KeyPress;
-},{"psykick2d":18}],5:[function(require,module,exports){
+},{"psykick2d":19}],6:[function(require,module,exports){
 'use strict';
 
 /*
@@ -210,7 +261,7 @@ module.exports = KeyPress;
  so that it will only draw when you tell it to, which should be after diffs have been added.
  */
 var Helper = require('psykick2d').Helper,
-    RenderSystem = require('psykick2d').RenderSystem;
+    Sprite = require('psykick2d').Systems.Render.Sprite;
 
 /**
  * Renders a background image for performance
@@ -220,13 +271,17 @@ var Helper = require('psykick2d').Helper,
  * @constructor
  */
 var BackgroundRender = function(layer){
-    RenderSystem.call(this);
-    this.requiredComponents = ['SpriteSheet','Position'];
+    Sprite.call(this);
     this.layer = layer;
-    //this.fakeCanvas = Mike's mom's continuous rolls of back-fat.
+    this.camera =  null;
+    this.dirty = true;
+    this.fakeCanvas =  document.createElement('canvas');
+    this.fakeCanvas.width = 900;
+    this.fakeCanvas.height = 600;
+    this.fakeCtx = this.fakeCanvas.getContext('2d');
 }
 
-Helper.inherit(BackgroundRender,RenderSystem);
+Helper.inherit(BackgroundRender,Sprite);
 
 /**
  * Sets up and image for the static background at first, then just
@@ -235,13 +290,25 @@ Helper.inherit(BackgroundRender,RenderSystem);
  * @param c
  */
 BackgroundRender.prototype.draw = function(c){
-    //TODO make ^^ that happen.
-
-
+    if(!this.camera){
+        return;
+    }
+    if(this.dirty){
+        //update the fakecanvas set dirty false;
+        Sprite.prototype.draw.call(this,this.fakeCtx);
+        this.pattern = c.createPattern(this.fakeCanvas, 'no-repeat');
+        this.dirty = false;
+    }
+    c.save();
+    c.scale(this.camera.scale,this.camera.scale);
+    c.fillStyle = this.pattern;
+    c.fillRect(this.camera.x,this.camera.y,900,600);
+    c.restore();
+    this.layer.visible = false;
 };
 
 module.exports = BackgroundRender;
-},{"psykick2d":18}],6:[function(require,module,exports){
+},{"psykick2d":19}],7:[function(require,module,exports){
 'use strict';
 
 var System = require('./system.js'),
@@ -312,7 +379,7 @@ BehaviorSystem.prototype.removeEntity = function(entity) {
 BehaviorSystem.prototype.update = function() {};
 
 module.exports = BehaviorSystem;
-},{"./helper.js":15,"./system.js":22}],7:[function(require,module,exports){
+},{"./helper.js":16,"./system.js":23}],8:[function(require,module,exports){
 'use strict';
 
 /**
@@ -337,7 +404,7 @@ Camera.prototype.toString = function() {
 };
 
 module.exports = Camera;
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 'use strict';
 
 /**
@@ -350,7 +417,7 @@ var Component = function() {
 };
 
 module.exports = Component;
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 'use strict';
 
 var Component = require('../../component.js'),
@@ -408,7 +475,7 @@ Animation.prototype.getFrame = function(delta) {
 };
 
 module.exports = Animation;
-},{"../../component.js":8,"../../helper.js":15}],10:[function(require,module,exports){
+},{"../../component.js":9,"../../helper.js":16}],11:[function(require,module,exports){
 'use strict';
 
 var Component = require('../../component.js'),
@@ -434,7 +501,7 @@ var Color = function(options) {
 Helper.inherit(Color, Component);
 
 module.exports = Color;
-},{"../../component.js":8,"../../helper.js":15}],11:[function(require,module,exports){
+},{"../../component.js":9,"../../helper.js":16}],12:[function(require,module,exports){
 'use strict';
 
 var Component = require('../../component.js'),
@@ -555,7 +622,7 @@ SpriteSheet.prototype.getOffset = function(frameX, frameY) {
 };
 
 module.exports = SpriteSheet;
-},{"../../component.js":8,"../../helper.js":15}],12:[function(require,module,exports){
+},{"../../component.js":9,"../../helper.js":16}],13:[function(require,module,exports){
 'use strict';
 
 var Component = require('../../component.js'),
@@ -592,7 +659,7 @@ var RectPhysicsBody = function(options) {
 Helper.inherit(RectPhysicsBody, Component);
 
 module.exports = RectPhysicsBody;
-},{"../../component.js":8,"../../helper.js":15}],13:[function(require,module,exports){
+},{"../../component.js":9,"../../helper.js":16}],14:[function(require,module,exports){
 'use strict';
 
 var Component = require('../../component.js'),
@@ -623,7 +690,7 @@ var Rectangle = function(options) {
 Helper.inherit(Rectangle, Component);
 
 module.exports = Rectangle;
-},{"../../component.js":8,"../../helper.js":15}],14:[function(require,module,exports){
+},{"../../component.js":9,"../../helper.js":16}],15:[function(require,module,exports){
 'use strict';
 
 var Component = require('./component.js');
@@ -695,7 +762,7 @@ Entity.prototype.hasComponent = function(componentName) {
 };
 
 module.exports = Entity;
-},{"./component.js":8}],15:[function(require,module,exports){
+},{"./component.js":9}],16:[function(require,module,exports){
 'use strict';
 
 /* global window: true */
@@ -811,7 +878,7 @@ var Helper = {
 };
 
 module.exports = Helper;
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 'use strict';
 
 /**
@@ -990,7 +1057,7 @@ CollisionGrid.prototype.getCollisions = function(entity) {
 };
 
 module.exports = CollisionGrid;
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 'use strict';
 
 /**
@@ -1143,19 +1210,14 @@ QuadTree.prototype.removeEntity = function(entity, body) {
  */
 QuadTree.prototype.moveEntity = function(entity, deltaPosition) {
     var body = entity.getComponent('RectPhysicsBody'),
-        oldXCell = (body.x / this.cellSize) | 0,
-        oldYCell = (body.y / this.cellSize) | 0,
-        newXCell = ( (body.x + deltaPosition.x) / this.cellSize ) | 0,
-        newYCell = ( (body.y + deltaPosition.y) / this.cellSize ) | 0;
+        hasMoved = (Math.abs(deltaPosition.x) + Math.abs(deltaPosition.y)) > 0;
 
-    if (oldXCell !== newXCell || oldYCell !== newYCell) {
+    // TODO: Do a smart check to see if it's changed cells
+    if (hasMoved) {
         this.removeEntity(entity, body);
         body.x += deltaPosition.x;
         body.y += deltaPosition.y;
         this.addEntity(entity, body);
-    } else {
-        body.x += deltaPosition.x;
-        body.y += deltaPosition.y;
     }
 };
 
@@ -1208,7 +1270,7 @@ QuadTree.prototype.getCollisions = function(entity, body) {
 };
 
 module.exports = QuadTree;
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 module.exports = {
     BehaviorSystem: require('./behavior-system.js'),
     Camera: require('./camera.js'),
@@ -1250,7 +1312,7 @@ module.exports = {
     },
     World: require('./world.js')
 };
-},{"./behavior-system.js":6,"./camera.js":7,"./component.js":8,"./components/gfx/animation.js":9,"./components/gfx/color.js":10,"./components/gfx/sprite-sheet.js":11,"./components/physics/rect-physics-body.js":12,"./components/shape/rectangle.js":13,"./entity.js":14,"./helper.js":15,"./helpers/collision-grid.js":16,"./helpers/quad-tree.js":17,"./keys.js":19,"./layer.js":20,"./render-system.js":21,"./system.js":22,"./systems/behavior/animate.js":23,"./systems/behavior/physics/platformer.js":24,"./systems/render/colored-rect.js":25,"./systems/render/sprite.js":26,"./world.js":27}],19:[function(require,module,exports){
+},{"./behavior-system.js":7,"./camera.js":8,"./component.js":9,"./components/gfx/animation.js":10,"./components/gfx/color.js":11,"./components/gfx/sprite-sheet.js":12,"./components/physics/rect-physics-body.js":13,"./components/shape/rectangle.js":14,"./entity.js":15,"./helper.js":16,"./helpers/collision-grid.js":17,"./helpers/quad-tree.js":18,"./keys.js":20,"./layer.js":21,"./render-system.js":22,"./system.js":23,"./systems/behavior/animate.js":24,"./systems/behavior/physics/platformer.js":25,"./systems/render/colored-rect.js":26,"./systems/render/sprite.js":27,"./world.js":28}],20:[function(require,module,exports){
 /**
  * A simple reference point for key codes
  * @type {Object}
@@ -1277,7 +1339,7 @@ module.exports = {
     // Common keys
     Space: 32, Enter: 13, Tab: 9, Esc: 27, Backspace: 8
 };
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 'use strict';
 
 var System = require('./system.js'),
@@ -1433,7 +1495,7 @@ Layer.prototype.update = function(delta) {
 };
 
 module.exports = Layer;
-},{"./behavior-system.js":6,"./render-system.js":21,"./system.js":22}],21:[function(require,module,exports){
+},{"./behavior-system.js":7,"./render-system.js":22,"./system.js":23}],22:[function(require,module,exports){
 'use strict';
 
 var System = require('./system.js'),
@@ -1501,7 +1563,7 @@ RenderSystem.prototype.removeEntity = function(entity) {
 RenderSystem.prototype.draw = function() {};
 
 module.exports = RenderSystem;
-},{"./helper.js":15,"./system.js":22}],22:[function(require,module,exports){
+},{"./helper.js":16,"./system.js":23}],23:[function(require,module,exports){
 'use strict';
 
 var Entity = require('./entity.js'),
@@ -1558,7 +1620,7 @@ System.prototype.removeEntity = function(entity) {
 };
 
 module.exports = System;
-},{"./entity.js":14,"./helper.js":15}],23:[function(require,module,exports){
+},{"./entity.js":15,"./helper.js":16}],24:[function(require,module,exports){
 'use strict';
 
 var Helper = require('../../helper.js'),
@@ -1598,7 +1660,7 @@ Animate.prototype.update = function(delta) {
 };
 
 module.exports = Animate;
-},{"../../behavior-system.js":6,"../../helper.js":15}],24:[function(require,module,exports){
+},{"../../behavior-system.js":7,"../../helper.js":16}],25:[function(require,module,exports){
 'use strict';
 
 var Helper = require('../../../helper.js'),
@@ -1790,7 +1852,7 @@ Platformer.prototype.update = function(delta) {
 };
 
 module.exports = Platformer;
-},{"../../../behavior-system.js":6,"../../../helper.js":15,"../../../helpers/quad-tree.js":17}],25:[function(require,module,exports){
+},{"../../../behavior-system.js":7,"../../../helper.js":16,"../../../helpers/quad-tree.js":18}],26:[function(require,module,exports){
 'use strict';
 
 var Helper = require('../../helper.js'),
@@ -1822,7 +1884,7 @@ ColoredRect.prototype.draw = function(c) {
 };
 
 module.exports = ColoredRect;
-},{"../../helper.js":15,"../../render-system.js":21}],26:[function(require,module,exports){
+},{"../../helper.js":16,"../../render-system.js":22}],27:[function(require,module,exports){
 'use strict';
 
 var Helper = require('../../helper.js'),
@@ -1836,10 +1898,29 @@ var Helper = require('../../helper.js'),
  */
 var Sprite = function() {
     RenderSystem.call(this);
-    this.requiredComponents = ['SpriteSheet', 'Position'];
+    this.requiredComponents = ['SpriteSheet', 'Rectangle'];
+    this._patternCanvases = {};
 };
 
 Helper.inherit(Sprite, RenderSystem);
+
+/**
+ * Removes an Entity
+ * @param {Entity|number} entity
+ * @return {boolean}
+ */
+Sprite.prototype.removeEntity = function(entity) {
+    if (RenderSystem.prototype.removeEntity.call(this, entity)) {
+        if (typeof entity === 'number') {
+            delete this._patternCanvases[entity];
+        } else {
+            delete this._patternCanvases[entity.id];
+        }
+        return true;
+    } else {
+        return false;
+    }
+};
 
 /**
  * Draw all the sprites
@@ -1849,28 +1930,62 @@ Sprite.prototype.draw = function(c) {
     for (var i = 0, len = this.drawOrder.length; i < len; i++) {
         var entity = this.drawOrder[i],
             spriteSheet = entity.getComponent('SpriteSheet'),
-            position = entity.getComponent('Position');
+            rect = entity.getComponent('Rectangle');
+        if (!spriteSheet.loaded) {
+            continue;
+        }
 
         c.save();
-        c.translate(position.x, position.y);
-        c.rotate(position.rotation);
-        c.drawImage(
-            spriteSheet.img,
-            spriteSheet.xOffset,
-            spriteSheet.yOffset,
-            spriteSheet.frameWidth,
-            spriteSheet.frameHeight,
-            -spriteSheet.frameWidth / 2,
-            -spriteSheet.frameHeight / 2,
-            spriteSheet.frameWidth,
-            spriteSheet.frameHeight
-        );
+        if (spriteSheet.repeat) {
+            c.translate(rect.x, rect.y);
+            c.rotate(rect.rotation);
+            var patternCanvas = this._patternCanvases[entity.id];
+            if (!patternCanvas) {
+                patternCanvas = document.createElement('canvas');
+                patternCanvas.width = spriteSheet.frameWidth;
+                patternCanvas.height = spriteSheet.frameHeight;
+                this._patternCanvases[entity.id] = patternCanvas;
+            }
+            var patternContext = patternCanvas.getContext('2d');
+            patternContext.drawImage(
+                spriteSheet.img,
+                spriteSheet.xOffset,
+                spriteSheet.yOffset,
+                spriteSheet.frameWidth,
+                spriteSheet.frameHeight,
+                0,
+                0,
+                spriteSheet.frameWidth,
+                spriteSheet.frameHeight
+            );
+            c.fillStyle = c.createPattern(patternCanvas, spriteSheet.repeat);
+            c.fillRect(
+                0,
+                0,
+                rect.w,
+                rect.h
+            );
+        } else {
+            c.translate(rect.x + rect.w / 2, rect.y + rect.h / 2);
+            c.rotate(rect.rotation);
+            c.drawImage(
+                spriteSheet.img,
+                spriteSheet.xOffset,
+                spriteSheet.yOffset,
+                spriteSheet.frameWidth,
+                spriteSheet.frameHeight,
+                -spriteSheet.frameWidth / 2,
+                -spriteSheet.frameHeight / 2,
+                spriteSheet.frameWidth,
+                spriteSheet.frameHeight
+            );
+        }
         c.restore();
     }
 };
 
 module.exports = Sprite;
-},{"../../helper.js":15,"../../render-system.js":21}],27:[function(require,module,exports){
+},{"../../helper.js":16,"../../render-system.js":22}],28:[function(require,module,exports){
 'use strict';
 
 var Entity = require('./entity.js'),
@@ -2137,4 +2252,4 @@ var World = {
 };
 
 module.exports = World;
-},{"./entity.js":14,"./helper.js":15,"./layer.js":20}]},{},[2]);
+},{"./entity.js":15,"./helper.js":16,"./layer.js":21}]},{},[2]);

@@ -3,7 +3,7 @@
 var World = require('psykick2d').World,
     Helper = require('psykick2d').Helper,
     Component = require('psykick2d').Component,
-    SpriteSheet = require('psykick2d').Components.SpriteSheet;
+    SpriteSheet = require('psykick2d').Components.GFX.SpriteSheet;
 
 
 module.exports = {
@@ -17,12 +17,16 @@ module.exports = {
             playerLayer = World.createLayer(),
 
             DirtySprite = require('psykick2d').Systems.Render.Sprite,
+            //ColoredRect = require('psykick2d').Systems.Render.ColoredRect,
             playerDrawSystem = new DirtySprite(playerLayer),
             BackGround = require('./systems/render/background-render.js'),
             backgroundDrawSystem = new BackGround(terrainLayer),
-            KeySendSystem = require('./systems/behavior/key-press.js');
+            KeySendSystem = require('./systems/behavior/key-press.js'),
+
+            PlayerCam = require('./player-camera.js');
 
         //create reusable SpriteSheet components;
+
         var sprites = {};
         sprites['Player1'] = new SpriteSheet({
             src:'./img/Player1.png',
@@ -59,6 +63,14 @@ module.exports = {
             frameWidth: 32,
             frameHeight:32
         });
+        sprites['Bullet'] = new SpriteSheet({
+            src:'./img/Bullet.png',
+            width: 32,
+            height: 52,
+            frameWidth: 32,
+            frameHeight:52
+        });
+        sprites['Wall'].repeat = 'repeat';
 
         //initialize the game state with information from the server.
         sock.on('start',function(data){
@@ -76,6 +88,7 @@ module.exports = {
                             addEntity.addComponentAs(addComponent,key);
                         }
                     }
+                    console.log(addEntity.getComponent('Rectangle'));
                     if(entityData.layer === 'terrain'){
                         backgroundDrawSystem.addEntity(addEntity);
                     } else if(entityData.layer === 'player'){
@@ -114,10 +127,19 @@ module.exports = {
                         changeEntity.addComponentAs(comp);
                     }
                     playerLayer.visible = true;
+                    terrainLayer.visible = true;
                 } else {
                     throw new Error('Unexpected Layer '+ key.layer);
                 }
             }
+        });
+
+        //An event to find out who I am
+        sock.on('playerID',function(data){
+            var player = playerDrawSystem.entities[data];
+            var cam = new PlayerCam(player.getComponent('Rectangle'));
+            playerLayer.camera = cam;
+            backgroundDrawSystem.camera = cam;
         });
     },
 
