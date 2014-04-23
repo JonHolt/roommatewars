@@ -2,7 +2,8 @@
 
 var World = require('psykick2d').World,
     Helper = require('psykick2d').Helper,
-    Component = require('psykick2d').Component;
+    Component = require('psykick2d').Component,
+    SpriteSheet = require('psykick2d').Components.SpriteSheet;
 
 
 module.exports = {
@@ -14,12 +15,50 @@ module.exports = {
 
         var terrainLayer = World.createLayer(),
             playerLayer = World.createLayer(),
-        //Sprite = require('psykick2d').Systems.Render.Sprite,
-            ColoredRect = require('psykick2d').Systems.Render.ColoredRect,
-            playerDrawSystem = new ColoredRect(),
+
+            DirtySprite = require('psykick2d').Systems.Render.Sprite,
+            playerDrawSystem = new DirtySprite(playerLayer),
             BackGround = require('./systems/render/background-render.js'),
             backgroundDrawSystem = new BackGround(terrainLayer),
             KeySendSystem = require('./systems/behavior/key-press.js');
+
+        //create reusable SpriteSheet components;
+        var sprites = {};
+        sprites['Player1'] = new SpriteSheet({
+            src:'./img/Player1.png',
+            width: 32,
+            height: 32,
+            frameWidth: 32,
+            frameHeight:32
+        });
+        sprites['Player2'] = new SpriteSheet({
+            src:'./img/Player2.png',
+            width: 32,
+            height: 32,
+            frameWidth: 32,
+            frameHeight:32
+        });
+        sprites['Player3'] = new SpriteSheet({
+            src:'./img/Player3.png',
+            width: 32,
+            height: 32,
+            frameWidth: 32,
+            frameHeight:32
+        });
+        sprites['Player4'] = new SpriteSheet({
+            src:'./img/Player4.png',
+            width: 32,
+            height: 32,
+            frameWidth: 32,
+            frameHeight:32
+        });
+        sprites['Wall'] = new SpriteSheet({
+            src:'./img/Wall.png',
+            width: 32,
+            height: 32,
+            frameWidth: 32,
+            frameHeight:32
+        });
 
         //initialize the game state with information from the server.
         sock.on('start',function(data){
@@ -29,14 +68,18 @@ module.exports = {
                 if(data[addEntity.id]){
                     var entityData = data[addEntity.id];
                     for(var key in entityData.components){
-                        var addComponent = new Component();
-                        addComponent = Helper.defaults(addComponent, entityData.components[key]);
-                        addEntity.addComponentAs(addComponent,key);
+                        if(key === 'SpriteSheet'&&sprites[entityData.components[key]]){
+                            addEntity.addComponentAs(sprites[entityData.components[key]],key);
+                        } else {
+                            var addComponent = new Component();
+                            addComponent = Helper.defaults(addComponent, entityData.components[key]);
+                            addEntity.addComponentAs(addComponent,key);
+                        }
                     }
                     if(entityData.layer === 'terrain'){
-                        backgroundDrawSystem.addEntity(addEntity); //Change this to add to system instead
+                        backgroundDrawSystem.addEntity(addEntity);
                     } else if(entityData.layer === 'player'){
-                        playerDrawSystem.addEntity(addEntity); //Change these to add to systems instead
+                        playerDrawSystem.addEntity(addEntity);
                     } else {
                         throw new Error('Unexpected Layer '+ entityData.layer);
                     }
