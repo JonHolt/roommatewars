@@ -32,15 +32,7 @@ KeyPress.prototype.update = function(){
         right:Helper.isKeyDown(Keys.Right),
         down:Helper.isKeyDown(Keys.Down)
     };
-    var send = false;
-    for(var key in sendKeys){
-        if(sendKeys[key]===true){
-            send = true;
-        }
-    }
-    if(send){
-        this.socket.emit('keys',sendKeys);
-    }
+    this.socket.emit('keys',sendKeys);
 };
 
 module.exports = KeyPress;

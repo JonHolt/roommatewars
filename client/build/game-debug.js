@@ -120,10 +120,10 @@ module.exports = {
         });
         sprites['Bullet'] = new SpriteSheet({
             src:'./img/Bullet.png',
-            width: 32,
-            height: 52,
-            frameWidth: 32,
-            frameHeight:52
+            width: 220,
+            height: 330,
+            frameWidth: 220,
+            frameHeight:330
         });
         sprites['Wall'].repeat = 'repeat';
 
@@ -164,27 +164,30 @@ module.exports = {
 
         //update the game state using the diffs from the server
         sock.on('update',function(data){
+            //debugger;
             for(var key in data){
-                var components = key.components;
-                if(key.layer === 'terrain'){
+                var components = data[key].components;
+                if(data[key].layer === 'terrain'){
                     var changeEntity = backgroundDrawSystem.entities[key];
                     for(var comp in components){
                         var changeComponent = changeEntity.getComponent(comp);
                         changeComponent = Helper.defaults(components[comp],changeComponent);
-                        changeEntity.addComponentAs(comp);
+                        changeEntity.addComponentAs(changeComponent,comp);
                     }
                     terrainLayer.visible = true;
-                } else if(key.layer === 'player'){
+                } else if(data[key].layer === 'player'){
                     var changeEntity = playerDrawSystem.entities[key];
                     for(var comp in components){
                         var changeComponent = changeEntity.getComponent(comp);
                         changeComponent = Helper.defaults(components[comp],changeComponent);
-                        changeEntity.addComponentAs(comp);
+                        changeComponent.prototype = new Component();
+                        debugger; //needs a smarter defaults that leaves it as a Component.
+                        changeEntity.addComponentAs(changeComponent,comp);
                     }
                     playerLayer.visible = true;
                     terrainLayer.visible = true;
                 } else {
-                    throw new Error('Unexpected Layer '+ key.layer);
+                    throw new Error('Unexpected Layer '+ data[key].layer);
                 }
             }
         });
@@ -241,15 +244,7 @@ KeyPress.prototype.update = function(){
         right:Helper.isKeyDown(Keys.Right),
         down:Helper.isKeyDown(Keys.Down)
     };
-    var send = false;
-    for(var key in sendKeys){
-        if(sendKeys[key]===true){
-            send = true;
-        }
-    }
-    if(send){
-        this.socket.emit('keys',sendKeys);
-    }
+    this.socket.emit('keys',sendKeys);
 };
 
 module.exports = KeyPress;
