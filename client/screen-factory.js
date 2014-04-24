@@ -20,7 +20,7 @@ module.exports = {
             //ColoredRect = require('psykick2d').Systems.Render.ColoredRect,
             playerDrawSystem = new DirtySprite(playerLayer),
             BackGround = require('./systems/render/background-render.js'),
-            backgroundDrawSystem = new BackGround(terrainLayer),
+            backgroundDrawSystem = new DirtySprite(terrainLayer),
             KeySendSystem = require('./systems/behavior/key-press.js'),
 
             PlayerCam = require('./player-camera.js');
