@@ -1,7 +1,7 @@
 {
   "name": "roommatewars",
   "version": "0.0.0",
-  "description": "A way for me, Jon, to legally destroy Mike.",
+  "description": "Word on the street is, Jon gives the worst blowjobs",
   "dependencies": {
     "psykick2d": "~0.3.7",
     "browserify": "^3.43.0",
