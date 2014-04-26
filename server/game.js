@@ -31,6 +31,7 @@ var createWall = function(data) {
             w: w,
             h: h
         });
+    rectComponent.rotation = 0;
     wall.addComponent(rectComponent);
     wall.addComponentAs(rectComponent, 'Rectangle');
     wall.components['SpriteSheet'] = 'Wall';
@@ -61,10 +62,10 @@ var createPlayer = function(data) {
             w: 32,
             h: 32
         });
+    rectComponent.rotation = 0;
     player.addComponent(rectComponent);
     player.addComponentAs(rectComponent, 'Rectangle');
     player.components['SpriteSheet'] = 'Player' + playerCount;
-    //player.components['SpriteSheet'] = 'Bullet';
     playerData.id = player.id;
     return player;
 };
