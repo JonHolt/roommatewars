@@ -75,7 +75,7 @@ module.exports = {
             //ColoredRect = require('psykick2d').Systems.Render.ColoredRect,
             playerDrawSystem = new DirtySprite(playerLayer),
             BackGround = require('./systems/render/background-render.js'),
-            backgroundDrawSystem = new BackGround(terrainLayer),
+            backgroundDrawSystem = new DirtySprite(terrainLayer),
             KeySendSystem = require('./systems/behavior/key-press.js'),
 
             PlayerCam = require('./player-camera.js');
@@ -171,18 +171,19 @@ module.exports = {
                     var changeEntity = backgroundDrawSystem.entities[key];
                     for(var comp in components){
                         var changeComponent = changeEntity.getComponent(comp);
-                        changeComponent = Helper.defaults(components[comp],changeComponent);
-                        changeEntity.addComponentAs(changeComponent,comp);
+                        for(var info in components[comp]){
+                            changeComponent[info] = components[comp][info];
+                        }
                     }
                     terrainLayer.visible = true;
                 } else if(data[key].layer === 'player'){
                     var changeEntity = playerDrawSystem.entities[key];
                     for(var comp in components){
                         var changeComponent = changeEntity.getComponent(comp);
-                        changeComponent = Helper.defaults(components[comp],changeComponent);
-                        changeComponent.prototype = new Component();
-                        debugger; //needs a smarter defaults that leaves it as a Component.
-                        changeEntity.addComponentAs(changeComponent,comp);
+                        //changeComponent = Helper.defaults(changeComponent,components[comp]);
+                        for(var info in components[comp]){
+                            changeComponent[info] = components[comp][info];
+                        }
                     }
                     playerLayer.visible = true;
                     terrainLayer.visible = true;
@@ -228,13 +229,23 @@ var Helper = require('psykick2d').Helper,
 var KeyPress = function(sock){
     BehaviorSystem.call(this);
     this.socket = sock;
+    this.sendKeys = {
+        w:false,
+        a:false,
+        s:false,
+        d:false,
+        left:false,
+        up:false,
+        right:false,
+        down:false
+    };
 };
 
 Helper.inherit(KeyPress,BehaviorSystem);
 
 
 KeyPress.prototype.update = function(){
-    var sendKeys = {
+    var pressed = {
         w:Helper.isKeyDown(Keys.W),
         a:Helper.isKeyDown(Keys.A),
         s:Helper.isKeyDown(Keys.S),
@@ -244,7 +255,12 @@ KeyPress.prototype.update = function(){
         right:Helper.isKeyDown(Keys.Right),
         down:Helper.isKeyDown(Keys.Down)
     };
-    this.socket.emit('keys',sendKeys);
+    for(var part in pressed){
+        if(pressed[part]!==this.sendKeys[part]){
+            this.sendKeys = pressed;
+            this.socket.emit('keys',pressed);
+        }
+    }
 };
 
 module.exports = KeyPress;

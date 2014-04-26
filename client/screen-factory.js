@@ -116,18 +116,19 @@ module.exports = {
                     var changeEntity = backgroundDrawSystem.entities[key];
                     for(var comp in components){
                         var changeComponent = changeEntity.getComponent(comp);
-                        changeComponent = Helper.defaults(components[comp],changeComponent);
-                        changeEntity.addComponentAs(changeComponent,comp);
+                        for(var info in components[comp]){
+                            changeComponent[info] = components[comp][info];
+                        }
                     }
                     terrainLayer.visible = true;
                 } else if(data[key].layer === 'player'){
                     var changeEntity = playerDrawSystem.entities[key];
                     for(var comp in components){
                         var changeComponent = changeEntity.getComponent(comp);
-                        changeComponent = Helper.defaults(components[comp],changeComponent);
-                        changeComponent.prototype = new Component();
-                        debugger; //needs a smarter defaults that leaves it as a Component.
-                        changeEntity.addComponentAs(changeComponent,comp);
+                        //changeComponent = Helper.defaults(changeComponent,components[comp]);
+                        for(var info in components[comp]){
+                            changeComponent[info] = components[comp][info];
+                        }
                     }
                     playerLayer.visible = true;
                     terrainLayer.visible = true;

@@ -16,13 +16,23 @@ var Helper = require('psykick2d').Helper,
 var KeyPress = function(sock){
     BehaviorSystem.call(this);
     this.socket = sock;
+    this.sendKeys = {
+        w:false,
+        a:false,
+        s:false,
+        d:false,
+        left:false,
+        up:false,
+        right:false,
+        down:false
+    };
 };
 
 Helper.inherit(KeyPress,BehaviorSystem);
 
 
 KeyPress.prototype.update = function(){
-    var sendKeys = {
+    var pressed = {
         w:Helper.isKeyDown(Keys.W),
         a:Helper.isKeyDown(Keys.A),
         s:Helper.isKeyDown(Keys.S),
@@ -32,7 +42,12 @@ KeyPress.prototype.update = function(){
         right:Helper.isKeyDown(Keys.Right),
         down:Helper.isKeyDown(Keys.Down)
     };
-    this.socket.emit('keys',sendKeys);
+    for(var part in pressed){
+        if(pressed[part]!==this.sendKeys[part]){
+            this.sendKeys = pressed;
+            this.socket.emit('keys',pressed);
+        }
+    }
 };
 
 module.exports = KeyPress;
