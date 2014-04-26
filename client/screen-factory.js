@@ -150,7 +150,7 @@ module.exports = {
                         } else {
                             var addComponent = new Component();
                             addComponent = this.copyComponent(addComponent, entityData.components[compKey]);
-                            newEntity.addComponentAs(addComponent,key);
+                            newEntity.addComponentAs(addComponent,compKey);
                         }
                     }
                     if(entityData.layer === 'terrain'){
