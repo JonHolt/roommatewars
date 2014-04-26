@@ -23,14 +23,15 @@ module.exports = {
         var terrainLayer = World.createLayer(),
             playerLayer = World.createLayer(),
 
-            DirtySprite = require('psykick2d').Systems.Render.Sprite,
+            DirtySprite = require('./systems/render/dirty-sprite.js'),
             //ColoredRect = require('psykick2d').Systems.Render.ColoredRect,
             playerDrawSystem = new DirtySprite(playerLayer),
-            BackGround = require('./systems/render/background-render.js'),
+            //BackGround = require('./systems/render/background-render.js'),
             backgroundDrawSystem = new DirtySprite(terrainLayer),
             KeySendSystem = require('./systems/behavior/key-press.js'),
 
             PlayerCam = require('./player-camera.js');
+        console.log(DirtySprite.toString());
 
         //create reusable SpriteSheet components;
 
@@ -90,7 +91,7 @@ module.exports = {
                         addEntity.addComponentAs(sprites[entityData.components[compKey]],compKey);
                     } else {
                         var addComponent = new Component();
-                        addComponent = this.copyComponent(addComponent, entityData.components[compKey]);
+                        module.exports.copyComponent(addComponent, entityData.components[compKey]);
                         addEntity.addComponentAs(addComponent,compKey);
                     }
                 }
@@ -117,14 +118,14 @@ module.exports = {
                     var changeEntity = backgroundDrawSystem.entities[key];
                     for(var comp in components){
                         var changeComponent = changeEntity.getComponent(comp);
-                        changeComponent = this.copyComponent(changeComponent, components[comp]);
+                        module.exports.copyComponent(changeComponent, components[comp]);
                     }
                     terrainLayer.visible = true;
                 } else if(data[key].layer === 'player'){
                     var changeEntity = playerDrawSystem.entities[key];
                     for(var comp in components){
                         var changeComponent = changeEntity.getComponent(comp);
-                        changeComponent = this.copyComponent(changeComponent, components[comp]);
+                        module.exports.copyComponent(changeComponent, components[comp]);
                     }
                     playerLayer.visible = true;
                     terrainLayer.visible = true;

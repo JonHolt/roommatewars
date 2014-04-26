@@ -78,14 +78,15 @@ module.exports = {
         var terrainLayer = World.createLayer(),
             playerLayer = World.createLayer(),
 
-            DirtySprite = require('psykick2d').Systems.Render.Sprite,
+            DirtySprite = require('./systems/render/dirty-sprite.js'),
             //ColoredRect = require('psykick2d').Systems.Render.ColoredRect,
             playerDrawSystem = new DirtySprite(playerLayer),
-            BackGround = require('./systems/render/background-render.js'),
+            //BackGround = require('./systems/render/background-render.js'),
             backgroundDrawSystem = new DirtySprite(terrainLayer),
             KeySendSystem = require('./systems/behavior/key-press.js'),
 
             PlayerCam = require('./player-camera.js');
+        console.log(DirtySprite.toString());
 
         //create reusable SpriteSheet components;
 
@@ -145,7 +146,7 @@ module.exports = {
                         addEntity.addComponentAs(sprites[entityData.components[compKey]],compKey);
                     } else {
                         var addComponent = new Component();
-                        addComponent = this.copyComponent(addComponent, entityData.components[compKey]);
+                        module.exports.copyComponent(addComponent, entityData.components[compKey]);
                         addEntity.addComponentAs(addComponent,compKey);
                     }
                 }
@@ -172,14 +173,14 @@ module.exports = {
                     var changeEntity = backgroundDrawSystem.entities[key];
                     for(var comp in components){
                         var changeComponent = changeEntity.getComponent(comp);
-                        changeComponent = this.copyComponent(changeComponent, components[comp]);
+                        module.exports.copyComponent(changeComponent, components[comp]);
                     }
                     terrainLayer.visible = true;
                 } else if(data[key].layer === 'player'){
                     var changeEntity = playerDrawSystem.entities[key];
                     for(var comp in components){
                         var changeComponent = changeEntity.getComponent(comp);
-                        changeComponent = this.copyComponent(changeComponent, components[comp]);
+                        module.exports.copyComponent(changeComponent, components[comp]);
                     }
                     playerLayer.visible = true;
                     terrainLayer.visible = true;
@@ -236,7 +237,7 @@ module.exports = {
 };
 
 //Notes:
-},{"./player-camera.js":3,"./systems/behavior/key-press.js":5,"./systems/render/background-render.js":6,"psykick2d":20}],5:[function(require,module,exports){
+},{"./player-camera.js":3,"./systems/behavior/key-press.js":5,"./systems/render/dirty-sprite.js":6,"psykick2d":20}],5:[function(require,module,exports){
 'use strict';
 
 /*
@@ -291,60 +292,31 @@ KeyPress.prototype.update = function(){
 
 module.exports = KeyPress;
 },{"psykick2d":20}],6:[function(require,module,exports){
-'use strict';
-
-/*
- This is for rendering statics like background walls and destructible walls. It automatically sets itself to invisible after each draw
- so that it will only draw when you tell it to, which should be after diffs have been added.
+/**
+ * Created by Jonathan on 4/22/14.
  */
+'use strict';
+/*
+Inherits from sprite, but it marks itself as invisible when done drawing so that it will only be redrawn when marked visible or 'dirty'
+ */
+
 var Helper = require('psykick2d').Helper,
     Sprite = require('psykick2d').Systems.Render.Sprite;
 
-/**
- * Renders a background image for performance
- *
- * @param layer the parent layer of this system.
- * @inherit RenderSystem
- * @constructor
- */
-var BackgroundRender = function(layer){
+
+var DirtySprite = function(layer){
     Sprite.call(this);
     this.layer = layer;
-    this.camera =  null;
-    this.dirty = true;
-    this.fakeCanvas =  document.createElement('canvas');
-    this.fakeCanvas.width = 900;
-    this.fakeCanvas.height = 600;
-    this.fakeCtx = this.fakeCanvas.getContext('2d');
 }
 
-Helper.inherit(BackgroundRender,Sprite);
+Helper.inherit(DirtySprite,Sprite);
 
-/**
- * Sets up and image for the static background at first, then just
- * translates that image when the camera moves. Will re-render the image
- * when destructible terrain has changed state.
- * @param c
- */
-BackgroundRender.prototype.draw = function(c){
-    if(!this.camera){
-        return;
-    }
-    if(this.dirty){
-        //update the fakecanvas set dirty false;
-        Sprite.prototype.draw.call(this,this.fakeCtx);
-        this.pattern = c.createPattern(this.fakeCanvas, 'no-repeat');
-        this.dirty = false;
-    }
-    c.save();
-    c.scale(this.camera.scale,this.camera.scale);
-    c.fillStyle = this.pattern;
-    c.fillRect(this.camera.x,this.camera.y,900,600);
-    c.restore();
+DirtySprite.prototype.draw = function(c){
+    Sprite.prototype.draw.call(this,c);
     this.layer.visible = false;
 };
 
-module.exports = BackgroundRender;
+module.exports = DirtySprite;
 },{"psykick2d":20}],7:[function(require,module,exports){
 'use strict';
 
@@ -853,6 +825,7 @@ var
 // Capture keyboard events
 if (win) {
     win.addEventListener('keydown', function(e) {
+        e.preventDefault();
         keysDown[e.keyCode] = {
             pressed: true,
             shift:   e.shiftKey,
@@ -862,6 +835,7 @@ if (win) {
     });
 
     win.addEventListener('keyup', function(e) {
+        e.preventDefault();
         if (keysDown.hasOwnProperty(e.keyCode)) {
             keysDown[e.keyCode].pressed = false;
         }
