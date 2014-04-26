@@ -2,7 +2,6 @@
 
 module.exports = function(grunt){
     require('matchdep').filter('grunt-*').forEach(grunt.loadNpmTasks);
-    grunt.loadNpmTasks('grunt-contrib-watch');
 
     grunt.initConfig({
         watch: {
