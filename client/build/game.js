@@ -58,7 +58,8 @@ module.exports = PlayerCam;
 var World = require('psykick2d').World,
     Helper = require('psykick2d').Helper,
     Component = require('psykick2d').Component,
-    SpriteSheet = require('psykick2d').Components.GFX.SpriteSheet;
+    SpriteSheet = require('psykick2d').Components.GFX.SpriteSheet,
+    Entity = require('psykick2d').Entity;
 
 
 module.exports = {
@@ -144,8 +145,8 @@ module.exports = {
                         addEntity.addComponentAs(sprites[entityData.components[compKey]],compKey);
                     } else {
                         var addComponent = new Component();
-                        addComponent = this.copyComponent(addComponent, entityData.components[key]);
-                        addEntity.addComponentAs(addComponent,key);
+                        addComponent = this.copyComponent(addComponent, entityData.components[compKey]);
+                        addEntity.addComponentAs(addComponent,compKey);
                     }
                 }
                 if(entityData.layer === 'terrain'){
@@ -196,7 +197,25 @@ module.exports = {
                     backgroundDrawSystem.removeEntity(key);
                     //kill from animation system too.
                 }else{
-                    var newEntity = new Entity(key|0);
+                    var newEntity = new Entity(key|0),
+                        entityData = data[key];
+
+                    for(var compKey in entityData.components){
+                        if(compKey === 'SpriteSheet'&&sprites[entityData.components[compKey]]){
+                            newEntity.addComponentAs(sprites[entityData.components[compKey]],compKey);
+                        } else {
+                            var addComponent = new Component();
+                            addComponent = this.copyComponent(addComponent, entityData.components[compKey]);
+                            newEntity.addComponentAs(addComponent,compKey);
+                        }
+                    }
+                    if(entityData.layer === 'terrain'){
+                        backgroundDrawSystem.addEntity(newEntity);
+                    } else if(entityData.layer === 'player'){
+                        playerDrawSystem.addEntity(newEntity);
+                    } else {
+                        throw new Error('Unexpected Layer '+ entityData.layer);
+                    }
                 }
             }
         });

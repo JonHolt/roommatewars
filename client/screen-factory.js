@@ -3,7 +3,8 @@
 var World = require('psykick2d').World,
     Helper = require('psykick2d').Helper,
     Component = require('psykick2d').Component,
-    SpriteSheet = require('psykick2d').Components.GFX.SpriteSheet;
+    SpriteSheet = require('psykick2d').Components.GFX.SpriteSheet,
+    Entity = require('psykick2d').Entity;
 
 
 module.exports = {
