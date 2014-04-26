@@ -31,7 +31,6 @@ module.exports = {
             KeySendSystem = require('./systems/behavior/key-press.js'),
 
             PlayerCam = require('./player-camera.js');
-        console.log(DirtySprite.toString());
 
         //create reusable SpriteSheet components;
 

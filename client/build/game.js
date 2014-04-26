@@ -86,7 +86,6 @@ module.exports = {
             KeySendSystem = require('./systems/behavior/key-press.js'),
 
             PlayerCam = require('./player-camera.js');
-        console.log(DirtySprite.toString());
 
         //create reusable SpriteSheet components;
 
@@ -825,7 +824,6 @@ var
 // Capture keyboard events
 if (win) {
     win.addEventListener('keydown', function(e) {
-        e.preventDefault();
         keysDown[e.keyCode] = {
             pressed: true,
             shift:   e.shiftKey,
@@ -835,7 +833,6 @@ if (win) {
     });
 
     win.addEventListener('keyup', function(e) {
-        e.preventDefault();
         if (keysDown.hasOwnProperty(e.keyCode)) {
             keysDown[e.keyCode].pressed = false;
         }
