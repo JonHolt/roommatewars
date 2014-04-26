@@ -1,22 +1,31 @@
 'use strict';
 
-var World = require('psykick2d').World;
+var Game = require('./game.js'),
+    PlayerManager = require('./player-manager.js'),
+    io = require('socket.io').listen(4242),
 
-World.init({
-    width: 900,
-    height: 600,
-    serverMode: true
-});
+    GameModes = {
+        Lobby: 0,
+        Game: 1
+    },
+    currentMode = GameModes.Lobby;
 
-var io = require('socket.io').listen(4242);
-io.set('authorization', function (handshakeData, cb) {
-    console.log(handshakeData.query);
-    cb(null, true);
-});
 io.sockets.on('connection', function(socket) {
-    console.log('Connected');
-    socket.emit('confirm', {
-        name: 'Jon',
-        occupation: 'Badass'
-    });
+    if (currentMode === GameModes.Game) {
+        return;
+    }
+    PlayerManager.addPlayer(socket);
+
+    // For testing purposes
+    Game.startGame();
+    currentMode = GameModes.Game;
+});
+io.sockets.on('readyState', function() {
+    if (currentMode === GameModes.Game) {
+        return;
+    }
+    if (PlayerManager.allPlayersAreReady()) {
+        Game.startGame();
+        currentMode = GameModes.Game;
+    }
 });
