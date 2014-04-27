@@ -1,10 +1,11 @@
 'use strict';
 
-var PlayerManager = require('./player-manager.js'),
+var ComponentUpdater = require('./component-updater.js'),
+    PlayerManager = require('./player-manager.js'),
     World = require('psykick2d').World,
-    Physics = require('psykick2d').Systems.Physics,
 
     PlayerInput = require('./systems/player-input.js'),
+    Physics = require('./systems/physics.js'),
 
     Components = {
         SpriteSheet: require('psykick2d').Components.GFX.SpriteSheet,
@@ -19,6 +20,12 @@ World.init({
     height: 600,
     serverMode: true
 });
+
+var oldUpdate = World.update;
+World.update = function(delta) {
+    oldUpdate.call(World, delta);
+    ComponentUpdater.emit();
+};
 
 var createWall = function(data) {
     var wall = World.createEntity(),
@@ -113,7 +120,6 @@ module.exports = {
                     if (entityType === 'spawnPoints') {
                         playerInputSystem.addEntity(newEntity);
                     }
-
                     physicsSystem.addEntity(newEntity);
 
                     for (var componentName in newEntity.components) {
@@ -142,9 +148,9 @@ module.exports = {
         }
 
         playerLayer.addSystem(playerInputSystem);
-        playerLayer.addSystem(physicsSystem);
         terrainLayer.addSystem(physicsSystem);
-
+        playerLayer.addSystem(physicsSystem);
+        World.pushLayer(terrainLayer);
         World.pushLayer(playerLayer);
 
         PlayerManager.broadcast('start', clientData);
