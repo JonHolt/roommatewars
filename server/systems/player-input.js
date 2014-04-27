@@ -55,22 +55,25 @@ PlayerInput.prototype.update = function(delta) {
             }
 
             if (direction !== null) {
-                deltaX = Math.cos(direction) * SPEED;
-                deltaY = Math.sin(direction) * SPEED;
+                deltaX = Math.cos(direction) * 2 * SPEED;
+                deltaY = Math.sin(direction) * 2 * SPEED;
+            } else {
+                rectComponent.velocity.x = 0;
+                rectComponent.velocity.y = 0;
             }
         }
 
         rectComponent.velocity.x += deltaX * delta;
-        if(rectComponent.velovity.x > 10){
-            rectComponent.velocity.x = 10;
-        } else if (rectComponent.velovity.x < -10){
-            rectComponent.velocity.x = -10;
+        if(rectComponent.velocity.x > SPEED){
+            rectComponent.velocity.x = SPEED;
+        } else if (rectComponent.velocity.x < -SPEED){
+            rectComponent.velocity.x = -SPEED;
         }
         rectComponent.velocity.y += deltaY * delta;
-        if(rectComponent.velovity.y > 10){
-            rectComponent.velocity.y = 10;
-        } else if (rectComponent.velovity.y < -10){
-            rectComponent.velocity.y = -10;
+        if(rectComponent.velocity.y > SPEED){
+            rectComponent.velocity.y = SPEED;
+        } else if (rectComponent.velocity.y < -SPEED){
+            rectComponent.velocity.y = -SPEED;
         }
 
         emitData[player.id] = {

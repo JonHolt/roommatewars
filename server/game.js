@@ -74,6 +74,7 @@ var createPlayer = function(data) {
     player.addComponent(rectComponent);
     player.addComponentAs(rectComponent, 'Rectangle');
     player.components['SpriteSheet'] = 'Player' + playerCount;
+    console.log(PlayerManager._players);
     playerData.id = player.id;
     return player;
 };

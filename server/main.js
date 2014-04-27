@@ -8,19 +8,20 @@ var Game = require('./game.js'),
         Lobby: 0,
         Game: 1
     },
-    currentMode = GameModes.Lobby;
+    currentMode = GameModes.Lobby,
+    numPlayers = 0;
 
 io.sockets.on('connection', function(socket) {
-    /* Removing for debug
     if (currentMode === GameModes.Game) {
         return;
     }
-    */
     PlayerManager.addPlayer(socket);
-
+    numPlayers++;
     // For testing purposes
-    Game.startGame();
-    currentMode = GameModes.Game;
+    if(numPlayers === 2){
+        Game.startGame();
+        currentMode = GameModes.Game;
+    }
 });
 io.sockets.on('readyState', function() {
     if (currentMode === GameModes.Game) {
