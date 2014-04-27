@@ -9,6 +9,7 @@ var Game = require('./game.js'),
         Game: 1
     },
     currentMode = GameModes.Lobby,
+    MAX_PLAYERS = 1,
     numPlayers = 0;
 
 io.sockets.on('connection', function(socket) {
@@ -18,7 +19,7 @@ io.sockets.on('connection', function(socket) {
     PlayerManager.addPlayer(socket);
     numPlayers++;
     // For testing purposes
-    if(numPlayers === 2){
+    if(numPlayers === MAX_PLAYERS){
         Game.startGame();
         currentMode = GameModes.Game;
     }
