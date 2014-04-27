@@ -150,7 +150,7 @@ module.exports = {
                             newEntity.addComponentAs(sprites[entityData.components[compKey]],compKey);
                         } else {
                             var addComponent = new Component();
-                            addComponent = this.copyComponent(addComponent, entityData.components[compKey]);
+                            addComponent = module.exports.copyComponent(addComponent, entityData.components[compKey]);
                             newEntity.addComponentAs(addComponent,compKey);
                         }
                     }
