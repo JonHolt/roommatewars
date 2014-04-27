@@ -2,6 +2,7 @@
 
 var PlayerManager = require('./player-manager.js'),
     World = require('psykick2d').World,
+    Physics = require('psykick2d').Systems.Physics,
 
     PlayerInput = require('./systems/player-input.js'),
 
@@ -77,6 +78,7 @@ module.exports = {
             terrainLayer = World.createLayer(),
             playerLayer = World.createLayer(),
             playerInputSystem = new PlayerInput(),
+            physicsSystem = new Physics(),
             clientData = {};
 
         for (var layerName in mapData) {
@@ -112,6 +114,8 @@ module.exports = {
                         playerInputSystem.addEntity(newEntity);
                     }
 
+                    physicsSystem.addEntity(newEntity);
+
                     for (var componentName in newEntity.components) {
                         if (componentName === 'RectPhysicsBody') {
                             continue;
@@ -138,6 +142,9 @@ module.exports = {
         }
 
         playerLayer.addSystem(playerInputSystem);
+        playerLayer.addSystem(physicsSystem);
+        terrainLayer.addSystem(physicsSystem);
+
         World.pushLayer(playerLayer);
 
         PlayerManager.broadcast('start', clientData);

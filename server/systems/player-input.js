@@ -19,10 +19,10 @@ PlayerInput.prototype.update = function(delta) {
             rectComponent = entity.getComponent('RectPhysicsBody'),
             emitData = {};
 
-        if (player.keys.a) {
+        if (player.keys.left) {
             rectComponent.rotation -= SPEED * Math.PI / 180;
         }
-        if (player.keys.d) {
+        if (player.keys.right) {
             rectComponent.rotation += SPEED * Math.PI / 180;
         }
 
@@ -37,20 +37,20 @@ PlayerInput.prototype.update = function(delta) {
         }
 
         if (direction !== null) {
-            if (player.keys.left && !player.keys.right) {
+            if (player.keys.a && !player.keys.d) {
                 direction -= Math.PI / 4;
             }
-            if (player.keys.right && !player.keys.left) {
+            if (player.keys.d && !player.keys.a) {
                 direction += Math.PI / 4;
             }
 
             deltaX = Math.cos(direction) * SPEED;
             deltaY = Math.sin(direction) * SPEED;
         } else {
-            if (player.keys.left && !player.keys.right) {
+            if (player.keys.a && !player.keys.d) {
                 direction = rectComponent.rotation - Math.PI / 2;
             }
-            if (player.keys.right && !player.keys.left) {
+            if (player.keys.d && !player.keys.a) {
                 direction = rectComponent.rotation + Math.PI / 2;
             }
 
@@ -60,8 +60,8 @@ PlayerInput.prototype.update = function(delta) {
             }
         }
 
-        rectComponent.x += deltaX;
-        rectComponent.y += deltaY;
+        rectComponent.velocity.x += deltaX * delta;
+        rectComponent.velocity.y += deltaY * delta;
 
         emitData[player.id] = {
             layer: 'player',
