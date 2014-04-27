@@ -121,9 +121,9 @@ module.exports = {
         nameEntity[0].addComponent(rectComponent);
         nameEntity[0].addComponent(colorComponent);
 
-        drawRectSystem.addEntity(nameEntity);
+        drawRectSystem.addEntity(nameEntity[0]);
         drawTextSystem.addEntity(titleEntity);
-        drawTextSystem.addEntity(nameEntity);
+        drawTextSystem.addEntity(nameEntity[0]);
 
         lobbyLayer.addSystem(drawRectSystem);
         lobbyLayer.addSystem(drawTextSystem);
@@ -590,6 +590,18 @@ Entity.prototype.addComponent = function(component) {
 };
 
 /**
+ * Adds a Component marked as a given type
+ * This can be used to use one component for multiple things i.e. physics body and a rectangle
+ * @param {Component} component
+ * @param {string} componentType Type to mark it as
+ */
+Entity.prototype.addComponentAs = function(component, componentType) {
+    if (component instanceof Component) {
+        this.components[componentType] = component;
+    }
+};
+
+/**
  * Removes a Component from the Entity
  * @param {Component} componentName
  */
@@ -627,7 +639,9 @@ module.exports = Entity;
 },{"./component.js":8}],15:[function(require,module,exports){
 'use strict';
 
+/* global window: true */
 var
+    window = window || null,
     // Save bytes in the minified version (see Underscore.js)
     ArrayProto          = Array.prototype,
     ObjProto            = Object.prototype,
@@ -640,7 +654,8 @@ var
     keysDown = {};
 
 // Capture keyboard events
-window.onkeydown = function(e) {
+if (window) {
+    window.onkeydown = function(e) {
     keysDown[e.keyCode] = {
         pressed: true,
         shift:   e.shiftKey,
@@ -649,11 +664,12 @@ window.onkeydown = function(e) {
     };
 };
 
-window.onkeyup = function(e) {
+    window.onkeyup = function(e) {
     if (keysDown.hasOwnProperty(e.keyCode)) {
         keysDown[e.keyCode].pressed = false;
     }
 };
+}
 
 var Helper = {
     /**
@@ -1068,18 +1084,19 @@ QuadTree.prototype.removeEntity = function(entity, body) {
  */
 QuadTree.prototype.moveEntity = function(entity, deltaPosition) {
     var body = entity.getComponent('RectPhysicsBody'),
-        oldXCell = Math.floor(body.x / this.cellSize),
-        oldYCell = Math.floor(body.y / this.cellSize);
-
-    body.x += deltaPosition.x;
-    body.y += deltaPosition.y;
-
-    var newXCell = Math.floor(body.x / this.cellSize),
-        newYCell = Math.floor(body.y / this.cellSize);
+        oldXCell = (body.x / this.cellSize) | 0,
+        oldYCell = (body.y / this.cellSize) | 0,
+        newXCell = ( (body.x + deltaPosition.x) / this.cellSize ) | 0,
+        newYCell = ( (body.y + deltaPosition.y) / this.cellSize ) | 0;
 
     if (oldXCell !== newXCell || oldYCell !== newYCell) {
         this.removeEntity(entity, body);
+        body.x += deltaPosition.x;
+        body.y += deltaPosition.y;
         this.addEntity(entity, body);
+    } else {
+        body.x += deltaPosition.x;
+        body.y += deltaPosition.y;
     }
 };
 
@@ -1214,6 +1231,7 @@ var System = require('./system.js'),
  * @param {Object}  options
  * @param {number}  options.id          - Unique ID assigned by the World
  * @param {Element} options.container   - Element which houses the Layer
+ * @param {boolean} options.serverMode  - If true, a canvas will not be made
  */
 var Layer = function(options) {
     this.id = options.id;
@@ -1225,16 +1243,18 @@ var Layer = function(options) {
     this.active = true;
 
     // Create a new canvas to draw on
+    if (!options.serverMode) {
     var canvas = document.createElement('canvas');
-    canvas.width = parseInt(options.container.style.width, 10);
-    canvas.height = parseInt(options.container.style.height, 10);
-    canvas.setAttribute('id', 'psykick-layer-' + options.id);
-    canvas.style.position = 'absolute';
-    canvas.style.top = '0px';
-    canvas.style.left = '0px';
-    canvas.style.zIndex = 0;
+        canvas.width = parseInt(options.container.style.width, 10);
+        canvas.height = parseInt(options.container.style.height, 10);
+        canvas.setAttribute('id', 'psykick-layer-' + options.id);
+        canvas.style.position = 'absolute';
+        canvas.style.top = '0px';
+        canvas.style.left = '0px';
+        canvas.style.zIndex = 0;
 
-    this.c = canvas.getContext('2d');
+        this.c = canvas.getContext('2d');
+    }
 };
 
 /**
@@ -1308,7 +1328,7 @@ Layer.prototype.removeSystem = function(system) {
  */
 Layer.prototype.draw = function() {
     // If the node doesn't exist, don't even try to draw
-    if (this.c.canvas.parentNode === null) {
+    if (!this.c || this.c.canvas.parentNode === null) {
         return;
     }
 
@@ -1811,9 +1831,6 @@ var Entity = require('./entity.js'),
     // Layer ID counter
     nextLayerID = 0,
 
-    // Collection of layers
-    layers = {},
-
     // Layers in the order they will be drawn/updated
     layersInDrawOrder = [],
 
@@ -1823,7 +1840,10 @@ var Entity = require('./entity.js'),
         afterUpdate: [],
         beforeDraw: [],
         afterDraw: []
-    };
+    },
+
+    // If true, will not access the window or DOM
+    serverMode = false;
 
 var World = {
     /**
@@ -1836,43 +1856,56 @@ var World = {
      */
     init: function(options) {
         var self = this,
-            backgroundEl = document.createElement('div'),
             gameTime = new Date(),
             defaults = {
-                canvasContainer: document.getElementById('psykick'),
-                width: window.innerWidth,
-                height: window.innerHeight,
-                backgroundColor: '#000'
-            };
+                canvasContainer: null,
+                width: 800,
+                height: 600,
+                backgroundColor: '#000',
+                serverMode: false
+            },
+            backgroundEl,
+            requestAnimationFrame;
 
         options = Helper.defaults(options, defaults);
-        if (typeof options.canvasContainer === 'string') {
-            options.canvasContainer = document.getElementById(options.canvasContainer);
+        serverMode = options.serverMode;
+        if (!serverMode) {
+            backgroundEl = document.createElement('div');
+            if (options.canvasContainer === null) {
+                options.canvasContainer = document.getElementById('psykick');
+            } else if (typeof options.canvasContainer === 'string') {
+                options.canvasContainer = document.getElementById(options.canvasContainer);
+            }
+
+            // Make sure the container will correctly house our canvases
+            canvasContainer = options.canvasContainer;
+            canvasContainer.style.position = 'relative';
+            canvasContainer.style.width = options.width + 'px';
+            canvasContainer.style.height = options.height + 'px';
+            canvasContainer.style.overflow = 'hidden';
+
+            // Setup a basic element to be the background color
+            backgroundEl.setAttribute('id', 'psykick-layer-base');
+            backgroundEl.style.position = 'absolute';
+            backgroundEl.style.top = '0px';
+            backgroundEl.style.left = '0px';
+            backgroundEl.style.zIndex = 0;
+            backgroundEl.style.width = options.width + 'px';
+            backgroundEl.style.height = options.height + 'px';
+            backgroundEl.style.backgroundColor = options.backgroundColor;
+
+            canvasContainer.appendChild(backgroundEl);
+
+            requestAnimationFrame = window.requestAnimationFrame ||
+                window.mozRequestAnimationFrame ||
+                window.webkitRequestAnimationFrame ||
+                window.msRequestAnimationFrame;
+        } else {
+            requestAnimationFrame = function(callback) {
+                setTimeout(callback, 1000 / 60);
+            };
         }
 
-        // Make sure the container will correctly house our canvases
-        canvasContainer = options.canvasContainer;
-        canvasContainer.style.position = 'relative';
-        canvasContainer.style.width = options.width + 'px';
-        canvasContainer.style.height = options.height + 'px';
-        canvasContainer.style.overflow = 'hidden';
-
-        // Setup a basic element to be the background color
-        backgroundEl.setAttribute('id', 'psykick-layer-base');
-        backgroundEl.style.position = 'absolute';
-        backgroundEl.style.top = '0px';
-        backgroundEl.style.left = '0px';
-        backgroundEl.style.zIndex = 0;
-        backgroundEl.style.width = options.width + 'px';
-        backgroundEl.style.height = options.height + 'px';
-        backgroundEl.style.backgroundColor = options.backgroundColor;
-
-        canvasContainer.appendChild(backgroundEl);
-
-        var requestAnimationFrame = window.requestAnimationFrame ||
-                                    window.mozRequestAnimationFrame ||
-                                    window.webkitRequestAnimationFrame ||
-                                    window.msRequestAnimationFrame;
         gameLoop = function() {
             var delta = (new Date() - gameTime) / 1000;
             self.update(delta);
@@ -1896,14 +1929,11 @@ var World = {
      * @returns {Layer}
      */
     createLayer: function() {
-        var self = this,
-            layer = new Layer({
-                id: nextLayerID++,
-                container: canvasContainer,
-                world: self
-            });
-        layers[layer.id] = layer;
-        return layer;
+        return new Layer({
+            id: nextLayerID++,
+            container: canvasContainer,
+            serverMode: serverMode
+        });
     },
 
     /**
@@ -1918,8 +1948,10 @@ var World = {
 
         if (layersInDrawOrder.indexOf(layer) === -1) {
             layersInDrawOrder.push(layer);
-            layer.setZIndex(layersInDrawOrder.length);
-            layer.restoreCanvas();
+            if (!serverMode) {
+                layer.setZIndex(layersInDrawOrder.length);
+                layer.restoreCanvas();
+            }
             return true;
         } else {
             return false;
@@ -1937,21 +1969,10 @@ var World = {
 
         var top = layersInDrawOrder[layersInDrawOrder.length - 1];
         layersInDrawOrder.pop();
-        top.removeCanvas();
-        return top;
-    },
-
-    /**
-     * Returns a Layer based on it's ID
-     * @param {number} layerID
-     * @returns {Layer|null}
-     */
-    getLayer: function(layerID) {
-        if (Helper.has(layers, layerID)) {
-            return layers[layerID];
-        } else {
-            return null;
+        if (!serverMode) {
+            top.removeCanvas();
         }
+        return top;
     },
 
     /**
@@ -2041,6 +2062,18 @@ var World = {
      */
     removeAllListeners: function(eventType) {
         eventHandlers[eventType] = [];
+    },
+
+    /**
+     * Resets the state of the world
+     * All Layers are removed
+     * ID counters return to 0
+     */
+    reset: function() {
+        while (this.popLayer()) {}
+        layersInDrawOrder = [];
+        nextEntityID = 0;
+        nextLayerID = 0;
     }
 };
 

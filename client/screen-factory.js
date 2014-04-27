@@ -51,9 +51,9 @@ module.exports = {
         nameEntity[0].addComponent(rectComponent);
         nameEntity[0].addComponent(colorComponent);
 
-        drawRectSystem.addEntity(nameEntity);
+        drawRectSystem.addEntity(nameEntity[0]);
         drawTextSystem.addEntity(titleEntity);
-        drawTextSystem.addEntity(nameEntity);
+        drawTextSystem.addEntity(nameEntity[0]);
 
         lobbyLayer.addSystem(drawRectSystem);
         lobbyLayer.addSystem(drawTextSystem);
