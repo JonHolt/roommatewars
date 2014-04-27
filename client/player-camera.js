@@ -11,7 +11,7 @@ var PlayerCam = function(playerRect){
     this.player = playerRect;
     this.x = 0;
     this.y = 0;
-    this.scale = 1.5;
+    this.scale = 1.2;
 };
 
 PlayerCam.prototype.render = function(c){

@@ -18,6 +18,8 @@ var DirtySprite = function(layer){
 Helper.inherit(DirtySprite,Sprite);
 
 DirtySprite.prototype.draw = function(c){
-    Sprite.draw.call(this,c);
+    Sprite.prototype.draw.call(this,c);
     this.layer.visible = false;
 };
+
+module.exports = DirtySprite;

@@ -1,7 +1,7 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 module.exports={
-    "playerName":"Jon",
-    "server":"192.168.1.6:4242"
+    "playername":"Jon",
+    "server":"192.168.1.4:4242"
 }
 },{}],2:[function(require,module,exports){
 'use strict';
@@ -37,7 +37,7 @@ var PlayerCam = function(playerRect){
     this.player = playerRect;
     this.x = 0;
     this.y = 0;
-    this.scale = 1.5;
+    this.scale = 1.2;
 };
 
 PlayerCam.prototype.render = function(c){
@@ -58,10 +58,17 @@ module.exports = PlayerCam;
 var World = require('psykick2d').World,
     Helper = require('psykick2d').Helper,
     Component = require('psykick2d').Component,
-    SpriteSheet = require('psykick2d').Components.GFX.SpriteSheet;
+    SpriteSheet = require('psykick2d').Components.GFX.SpriteSheet,
+    Entity = require('psykick2d').Entity;
 
 
 module.exports = {
+    copyComponent: function(copyTo,copyFrom){
+        for(var key in copyFrom){
+            copyTo[key] = copyFrom[key];
+        }
+    },
+
     showLobby: function(sock) {
 
     },
@@ -71,10 +78,10 @@ module.exports = {
         var terrainLayer = World.createLayer(),
             playerLayer = World.createLayer(),
 
-            DirtySprite = require('psykick2d').Systems.Render.Sprite,
+            DirtySprite = require('./systems/render/dirty-sprite.js'),
             //ColoredRect = require('psykick2d').Systems.Render.ColoredRect,
             playerDrawSystem = new DirtySprite(playerLayer),
-            BackGround = require('./systems/render/background-render.js'),
+            //BackGround = require('./systems/render/background-render.js'),
             backgroundDrawSystem = new DirtySprite(terrainLayer),
             KeySendSystem = require('./systems/behavior/key-press.js'),
 
@@ -130,29 +137,24 @@ module.exports = {
         //initialize the game state with information from the server.
         sock.on('start',function(data){
             var len = Object.keys(data).length;
-            for(var i = 0; i < len; i++){
-                var addEntity = World.createEntity();
-                if(data[addEntity.id]){
-                    var entityData = data[addEntity.id];
-                    for(var key in entityData.components){
-                        if(key === 'SpriteSheet'&&sprites[entityData.components[key]]){
-                            addEntity.addComponentAs(sprites[entityData.components[key]],key);
-                        } else {
-                            var addComponent = new Component();
-                            addComponent = Helper.defaults(addComponent, entityData.components[key]);
-                            addEntity.addComponentAs(addComponent,key);
-                        }
-                    }
-                    console.log(addEntity.getComponent('Rectangle'));
-                    if(entityData.layer === 'terrain'){
-                        backgroundDrawSystem.addEntity(addEntity);
-                    } else if(entityData.layer === 'player'){
-                        playerDrawSystem.addEntity(addEntity);
+            for(var key in data){
+                var addEntity = new Entity(key|0);
+                var entityData = data[key];
+                for(var compKey in entityData.components){
+                    if(compKey === 'SpriteSheet'&&sprites[entityData.components[compKey]]){
+                        addEntity.addComponentAs(sprites[entityData.components[compKey]],compKey);
                     } else {
-                        throw new Error('Unexpected Layer '+ entityData.layer);
+                        var addComponent = new Component();
+                        module.exports.copyComponent(addComponent, entityData.components[compKey]);
+                        addEntity.addComponentAs(addComponent,compKey);
                     }
+                }
+                if(entityData.layer === 'terrain'){
+                    backgroundDrawSystem.addEntity(addEntity);
+                } else if(entityData.layer === 'player'){
+                    playerDrawSystem.addEntity(addEntity);
                 } else {
-                    throw new Error('Did not receive Entity from server by id '+addEntity.id);
+                    throw new Error('Unexpected Layer '+ entityData.layer);
                 }
             }
             terrainLayer.addSystem(backgroundDrawSystem);
@@ -164,26 +166,20 @@ module.exports = {
 
         //update the game state using the diffs from the server
         sock.on('update',function(data){
-            //debugger;
             for(var key in data){
                 var components = data[key].components;
                 if(data[key].layer === 'terrain'){
                     var changeEntity = backgroundDrawSystem.entities[key];
                     for(var comp in components){
                         var changeComponent = changeEntity.getComponent(comp);
-                        for(var info in components[comp]){
-                            changeComponent[info] = components[comp][info];
-                        }
+                        module.exports.copyComponent(changeComponent, components[comp]);
                     }
                     terrainLayer.visible = true;
                 } else if(data[key].layer === 'player'){
                     var changeEntity = playerDrawSystem.entities[key];
                     for(var comp in components){
                         var changeComponent = changeEntity.getComponent(comp);
-                        //changeComponent = Helper.defaults(changeComponent,components[comp]);
-                        for(var info in components[comp]){
-                            changeComponent[info] = components[comp][info];
-                        }
+                        module.exports.copyComponent(changeComponent, components[comp]);
                     }
                     playerLayer.visible = true;
                     terrainLayer.visible = true;
@@ -193,12 +189,44 @@ module.exports = {
             }
         });
 
+        //update the living and dead entities
+        sock.on('heaven',function(data){
+            for(var key in data){
+                if(data[key]==='dead'){
+                    playerDrawSystem.removeEntity(key);
+                    backgroundDrawSystem.removeEntity(key);
+                    //kill from animation system too.
+                }else{
+                    var newEntity = new Entity(key|0),
+                        entityData = data[key];
+
+                    for(var compKey in entityData.components){
+                        if(compKey === 'SpriteSheet'&&sprites[entityData.components[compKey]]){
+                            newEntity.addComponentAs(sprites[entityData.components[compKey]],compKey);
+                        } else {
+                            var addComponent = new Component();
+                            addComponent = this.copyComponent(addComponent, entityData.components[compKey]);
+                            newEntity.addComponentAs(addComponent,compKey);
+                        }
+                    }
+                    if(entityData.layer === 'terrain'){
+                        backgroundDrawSystem.addEntity(newEntity);
+                    } else if(entityData.layer === 'player'){
+                        playerDrawSystem.addEntity(newEntity);
+                    } else {
+                        throw new Error('Unexpected Layer '+ entityData.layer);
+                    }
+                }
+            }
+        });
+
         //An event to find out who I am
         sock.on('playerID',function(data){
             var player = playerDrawSystem.entities[data];
             var cam = new PlayerCam(player.getComponent('Rectangle'));
             playerLayer.camera = cam;
-            backgroundDrawSystem.camera = cam;
+            terrainLayer.camera = cam;
+            //backgroundDrawSystem.camera = cam;
         });
     },
 
@@ -208,9 +236,7 @@ module.exports = {
 };
 
 //Notes:
-// var component = new Component();
-// component = Helper.defaults(component, componentData);
-},{"./player-camera.js":3,"./systems/behavior/key-press.js":5,"./systems/render/background-render.js":6,"psykick2d":20}],5:[function(require,module,exports){
+},{"./player-camera.js":3,"./systems/behavior/key-press.js":5,"./systems/render/dirty-sprite.js":6,"psykick2d":20}],5:[function(require,module,exports){
 'use strict';
 
 /*
@@ -265,60 +291,31 @@ KeyPress.prototype.update = function(){
 
 module.exports = KeyPress;
 },{"psykick2d":20}],6:[function(require,module,exports){
-'use strict';
-
-/*
- This is for rendering statics like background walls and destructible walls. It automatically sets itself to invisible after each draw
- so that it will only draw when you tell it to, which should be after diffs have been added.
+/**
+ * Created by Jonathan on 4/22/14.
  */
+'use strict';
+/*
+Inherits from sprite, but it marks itself as invisible when done drawing so that it will only be redrawn when marked visible or 'dirty'
+ */
+
 var Helper = require('psykick2d').Helper,
     Sprite = require('psykick2d').Systems.Render.Sprite;
 
-/**
- * Renders a background image for performance
- *
- * @param layer the parent layer of this system.
- * @inherit RenderSystem
- * @constructor
- */
-var BackgroundRender = function(layer){
+
+var DirtySprite = function(layer){
     Sprite.call(this);
     this.layer = layer;
-    this.camera =  null;
-    this.dirty = true;
-    this.fakeCanvas =  document.createElement('canvas');
-    this.fakeCanvas.width = 900;
-    this.fakeCanvas.height = 600;
-    this.fakeCtx = this.fakeCanvas.getContext('2d');
 }
 
-Helper.inherit(BackgroundRender,Sprite);
+Helper.inherit(DirtySprite,Sprite);
 
-/**
- * Sets up and image for the static background at first, then just
- * translates that image when the camera moves. Will re-render the image
- * when destructible terrain has changed state.
- * @param c
- */
-BackgroundRender.prototype.draw = function(c){
-    if(!this.camera){
-        return;
-    }
-    if(this.dirty){
-        //update the fakecanvas set dirty false;
-        Sprite.prototype.draw.call(this,this.fakeCtx);
-        this.pattern = c.createPattern(this.fakeCanvas, 'no-repeat');
-        this.dirty = false;
-    }
-    c.save();
-    c.scale(this.camera.scale,this.camera.scale);
-    c.fillStyle = this.pattern;
-    c.fillRect(this.camera.x,this.camera.y,900,600);
-    c.restore();
+DirtySprite.prototype.draw = function(c){
+    Sprite.prototype.draw.call(this,c);
     this.layer.visible = false;
 };
 
-module.exports = BackgroundRender;
+module.exports = DirtySprite;
 },{"psykick2d":20}],7:[function(require,module,exports){
 'use strict';
 
@@ -1492,6 +1489,10 @@ Layer.prototype.addSystem = function(system) {
 
     if (system.parentLayer === null) {
         system.parentLayer = this;
+    } else {
+        var err = new Error('System already belongs to another Layer');
+        err.system = system;
+        throw err;
     }
 
     if (system instanceof BehaviorSystem && this.behaviorSystems.indexOf(system) === -1) {
