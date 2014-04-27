@@ -85,8 +85,8 @@ module.exports = {
         var mapData = require('./maps/basic.json'),
             terrainLayer = World.createLayer(),
             playerLayer = World.createLayer(),
-            playerInputSystem = new PlayerInput(),
             physicsSystem = new Physics(),
+            playerInputSystem = new PlayerInput(physicsSystem),
             clientData = {};
 
         for (var layerName in mapData) {
@@ -158,9 +158,5 @@ module.exports = {
         PlayerManager.forEachPlayer(function(player) {
             player.socket.emit('playerID', player.id);
         });
-    },
-
-    addBullet: function(rect){
-        //write code to add a bullet to the world here.
     }
 };

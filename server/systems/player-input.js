@@ -2,11 +2,12 @@
 
 var BehaviorSystem = require('psykick2d').BehaviorSystem,
     Helper = require('psykick2d').Helper,
-    Game = require('./../game.js'),
+    World= require('psykick2d').World,
 
     PlayerManager = require('../player-manager.js');
 
-var PlayerInput = function() {
+var PlayerInput = function(physics) {
+    this.physics = physics;
     BehaviorSystem.call(this);
 };
 
@@ -27,12 +28,17 @@ PlayerInput.prototype.update = function(delta) {
             rectComponent.rotation += SPEED * Math.PI / 180;
         }
         //Manage shooting bullets after rotation is established
-        /*if(player.cooldown > 0){
+        if(player.cooldown > 0){
          player.cooldown -= delta;
          } else if(player.keys.w){
-         player.cooldown = 1;
-         Game.addBullet(rectComponent)
-         }*/
+            player.cooldown = 1;
+            addBullet.call(self,rectComponent,player);
+         } else if(player.keys.s){
+            player.cooldown = .9; //slightly smaller cooldown for panic mode?
+            var bulletDirection = rectComponent.rotation + Math.PI + (Math.random()*2-1),
+                bulletRect = Helper.defaults({rotation:bulletDirection},rectComponent);
+            addBullet.call(self,bulletRect,player);
+         }
 
         var direction = null,
             deltaX = 0,
@@ -85,8 +91,24 @@ PlayerInput.prototype.update = function(delta) {
             }
         };
 
-        player.socket.emit('update', emitData);
+        //player.socket.emit('update', emitData);
     });
+};
+
+var addBullet = function(rect,player){
+    var bullet = World.createEntity();
+    rect.velocity.x = Math.cos(rect.rotation) * 15;
+    rect.velocity.y = Math.sin(rect.rotation) * 15;
+    bullet.addComponent(rect);
+    bullet.addComponentAs(rect,'Rectangle');
+    bullet.components['SpriteSheet'] = 'Bullet';
+    this.physics.addEntity(bullet);
+    var bulletData= {};
+    bulletData['layer']='player';
+    bulletData['components']=bullet.components;
+    var sendData = {};
+    sendData[bullet.id]=bulletData;
+    player.socket.emit('heaven',sendData);
 };
 
 module.exports = PlayerInput;
