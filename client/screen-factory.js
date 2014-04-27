@@ -3,10 +3,17 @@
 var World = require('psykick2d').World,
     Helper = require('psykick2d').Helper,
     Component = require('psykick2d').Component,
-    SpriteSheet = require('psykick2d').Components.GFX.SpriteSheet;
+    SpriteSheet = require('psykick2d').Components.GFX.SpriteSheet,
+    Entity = require('psykick2d').Entity;
 
 
 module.exports = {
+    copyComponent: function(copyTo,copyFrom){
+        for(var key in copyFrom){
+            copyTo[key] = copyFrom[key];
+        }
+    },
+
     showLobby: function(sock) {
 
     },
@@ -16,10 +23,10 @@ module.exports = {
         var terrainLayer = World.createLayer(),
             playerLayer = World.createLayer(),
 
-            DirtySprite = require('psykick2d').Systems.Render.Sprite,
+            DirtySprite = require('./systems/render/dirty-sprite.js'),
             //ColoredRect = require('psykick2d').Systems.Render.ColoredRect,
             playerDrawSystem = new DirtySprite(playerLayer),
-            BackGround = require('./systems/render/background-render.js'),
+            //BackGround = require('./systems/render/background-render.js'),
             backgroundDrawSystem = new DirtySprite(terrainLayer),
             KeySendSystem = require('./systems/behavior/key-press.js'),
 
@@ -75,29 +82,24 @@ module.exports = {
         //initialize the game state with information from the server.
         sock.on('start',function(data){
             var len = Object.keys(data).length;
-            for(var i = 0; i < len; i++){
-                var addEntity = World.createEntity();
-                if(data[addEntity.id]){
-                    var entityData = data[addEntity.id];
-                    for(var key in entityData.components){
-                        if(key === 'SpriteSheet'&&sprites[entityData.components[key]]){
-                            addEntity.addComponentAs(sprites[entityData.components[key]],key);
-                        } else {
-                            var addComponent = new Component();
-                            addComponent = Helper.defaults(addComponent, entityData.components[key]);
-                            addEntity.addComponentAs(addComponent,key);
-                        }
-                    }
-                    console.log(addEntity.getComponent('Rectangle'));
-                    if(entityData.layer === 'terrain'){
-                        backgroundDrawSystem.addEntity(addEntity);
-                    } else if(entityData.layer === 'player'){
-                        playerDrawSystem.addEntity(addEntity);
+            for(var key in data){
+                var addEntity = new Entity(key|0);
+                var entityData = data[key];
+                for(var compKey in entityData.components){
+                    if(compKey === 'SpriteSheet'&&sprites[entityData.components[compKey]]){
+                        addEntity.addComponentAs(sprites[entityData.components[compKey]],compKey);
                     } else {
-                        throw new Error('Unexpected Layer '+ entityData.layer);
+                        var addComponent = new Component();
+                        module.exports.copyComponent(addComponent, entityData.components[compKey]);
+                        addEntity.addComponentAs(addComponent,compKey);
                     }
+                }
+                if(entityData.layer === 'terrain'){
+                    backgroundDrawSystem.addEntity(addEntity);
+                } else if(entityData.layer === 'player'){
+                    playerDrawSystem.addEntity(addEntity);
                 } else {
-                    throw new Error('Did not receive Entity from server by id '+addEntity.id);
+                    throw new Error('Unexpected Layer '+ entityData.layer);
                 }
             }
             terrainLayer.addSystem(backgroundDrawSystem);
@@ -109,26 +111,20 @@ module.exports = {
 
         //update the game state using the diffs from the server
         sock.on('update',function(data){
-            //debugger;
             for(var key in data){
                 var components = data[key].components;
                 if(data[key].layer === 'terrain'){
                     var changeEntity = backgroundDrawSystem.entities[key];
                     for(var comp in components){
                         var changeComponent = changeEntity.getComponent(comp);
-                        for(var info in components[comp]){
-                            changeComponent[info] = components[comp][info];
-                        }
+                        module.exports.copyComponent(changeComponent, components[comp]);
                     }
                     terrainLayer.visible = true;
                 } else if(data[key].layer === 'player'){
                     var changeEntity = playerDrawSystem.entities[key];
                     for(var comp in components){
                         var changeComponent = changeEntity.getComponent(comp);
-                        //changeComponent = Helper.defaults(changeComponent,components[comp]);
-                        for(var info in components[comp]){
-                            changeComponent[info] = components[comp][info];
-                        }
+                        module.exports.copyComponent(changeComponent, components[comp]);
                     }
                     playerLayer.visible = true;
                     terrainLayer.visible = true;
@@ -138,12 +134,44 @@ module.exports = {
             }
         });
 
+        //update the living and dead entities
+        sock.on('heaven',function(data){
+            for(var key in data){
+                if(data[key]==='dead'){
+                    playerDrawSystem.removeEntity(key);
+                    backgroundDrawSystem.removeEntity(key);
+                    //kill from animation system too.
+                }else{
+                    var newEntity = new Entity(key|0),
+                        entityData = data[key];
+
+                    for(var compKey in entityData.components){
+                        if(compKey === 'SpriteSheet'&&sprites[entityData.components[compKey]]){
+                            newEntity.addComponentAs(sprites[entityData.components[compKey]],compKey);
+                        } else {
+                            var addComponent = new Component();
+                            addComponent = this.copyComponent(addComponent, entityData.components[compKey]);
+                            newEntity.addComponentAs(addComponent,compKey);
+                        }
+                    }
+                    if(entityData.layer === 'terrain'){
+                        backgroundDrawSystem.addEntity(newEntity);
+                    } else if(entityData.layer === 'player'){
+                        playerDrawSystem.addEntity(newEntity);
+                    } else {
+                        throw new Error('Unexpected Layer '+ entityData.layer);
+                    }
+                }
+            }
+        });
+
         //An event to find out who I am
         sock.on('playerID',function(data){
             var player = playerDrawSystem.entities[data];
             var cam = new PlayerCam(player.getComponent('Rectangle'));
             playerLayer.camera = cam;
-            backgroundDrawSystem.camera = cam;
+            terrainLayer.camera = cam;
+            //backgroundDrawSystem.camera = cam;
         });
     },
 
@@ -153,5 +181,3 @@ module.exports = {
 };
 
 //Notes:
-// var component = new Component();
-// component = Helper.defaults(component, componentData);
