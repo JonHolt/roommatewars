@@ -11,9 +11,11 @@ var Game = require('./game.js'),
     currentMode = GameModes.Lobby;
 
 io.sockets.on('connection', function(socket) {
+    /* Removing for debug
     if (currentMode === GameModes.Game) {
         return;
     }
+    */
     PlayerManager.addPlayer(socket);
 
     // For testing purposes
