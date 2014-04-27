@@ -72,6 +72,7 @@ var createPlayer = function(data) {
 
 module.exports = {
     startGame: function() {
+        World.reset();
         var mapData = require('./maps/basic.json'),
             terrainLayer = World.createLayer(),
             playerLayer = World.createLayer(),
