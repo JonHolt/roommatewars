@@ -158,5 +158,9 @@ module.exports = {
         PlayerManager.forEachPlayer(function(player) {
             player.socket.emit('playerID', player.id);
         });
+    },
+
+    addBullet: function(rect){
+        //write code to add a bullet to the world here.
     }
 };

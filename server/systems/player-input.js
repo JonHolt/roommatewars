@@ -2,6 +2,7 @@
 
 var BehaviorSystem = require('psykick2d').BehaviorSystem,
     Helper = require('psykick2d').Helper,
+    Game = require('./../game.js'),
 
     PlayerManager = require('../player-manager.js');
 
@@ -25,6 +26,13 @@ PlayerInput.prototype.update = function(delta) {
         if (player.keys.right) {
             rectComponent.rotation += SPEED * Math.PI / 180;
         }
+        //Manage shooting bullets after rotation is established
+        /*if(player.cooldown > 0){
+         player.cooldown -= delta;
+         } else if(player.keys.w){
+         player.cooldown = 1;
+         Game.addBullet(rectComponent)
+         }*/
 
         var direction = null,
             deltaX = 0,
@@ -55,26 +63,16 @@ PlayerInput.prototype.update = function(delta) {
             }
 
             if (direction !== null) {
-                deltaX = Math.cos(direction) * 2 * SPEED;
-                deltaY = Math.sin(direction) * 2 * SPEED;
+                deltaX = Math.cos(direction) * SPEED;
+                deltaY = Math.sin(direction) * SPEED;
             } else {
                 rectComponent.velocity.x = 0;
                 rectComponent.velocity.y = 0;
             }
         }
 
-        rectComponent.velocity.x += deltaX * delta;
-        if(rectComponent.velocity.x > SPEED){
-            rectComponent.velocity.x = SPEED;
-        } else if (rectComponent.velocity.x < -SPEED){
-            rectComponent.velocity.x = -SPEED;
-        }
-        rectComponent.velocity.y += deltaY * delta;
-        if(rectComponent.velocity.y > SPEED){
-            rectComponent.velocity.y = SPEED;
-        } else if (rectComponent.velocity.y < -SPEED){
-            rectComponent.velocity.y = -SPEED;
-        }
+        rectComponent.velocity.x = deltaX;
+        rectComponent.velocity.y = deltaY;
 
         emitData[player.id] = {
             layer: 'player',

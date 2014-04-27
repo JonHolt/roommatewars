@@ -19,7 +19,8 @@ var PlayerManager = {
                 socket: socket,
                 readyState: false,
                 sprite: null,
-                keys: {}
+                keys: {},
+                cooldown:0
             };
         }
 
