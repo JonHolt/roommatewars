@@ -3,7 +3,8 @@
 var BehaviorSystem = require('psykick2d').BehaviorSystem,
     Helper = require('psykick2d').Helper,
 
-    PlayerManager = require('../player-manager.js');
+    PlayerManager = require('../player-manager.js'),
+    ComponentUpdater = require('../component-updater.js');
 
 var PlayerInput = function() {
     BehaviorSystem.call(this);
@@ -11,19 +12,28 @@ var PlayerInput = function() {
 
 Helper.inherit(PlayerInput, BehaviorSystem);
 
-PlayerInput.prototype.update = function(delta) {
+PlayerInput.prototype.update = function() {
     var self = this,
         SPEED = 5;
     PlayerManager.forEachPlayer(function(player) {
         var entity = self.entities[player.id],
-            rectComponent = entity.getComponent('RectPhysicsBody'),
-            emitData = {};
+            rectComponent = entity.getComponent('RectPhysicsBody');
 
         if (player.keys.left) {
             rectComponent.rotation -= SPEED * Math.PI / 180;
+            ComponentUpdater.updateEntity(entity, 'player', {
+                Rectangle: {
+                    rotation: rectComponent.rotation
+                }
+            });
         }
         if (player.keys.right) {
             rectComponent.rotation += SPEED * Math.PI / 180;
+            ComponentUpdater.updateEntity(entity, 'player', {
+                Rectangle: {
+                    rotation: rectComponent.rotation
+                }
+            });
         }
 
         var direction = null,
@@ -63,31 +73,18 @@ PlayerInput.prototype.update = function(delta) {
             }
         }
 
-        rectComponent.velocity.x += deltaX * delta;
+        rectComponent.velocity.x += deltaX;
         if(rectComponent.velocity.x > SPEED){
             rectComponent.velocity.x = SPEED;
         } else if (rectComponent.velocity.x < -SPEED){
             rectComponent.velocity.x = -SPEED;
         }
-        rectComponent.velocity.y += deltaY * delta;
+        rectComponent.velocity.y += deltaY;
         if(rectComponent.velocity.y > SPEED){
             rectComponent.velocity.y = SPEED;
         } else if (rectComponent.velocity.y < -SPEED){
             rectComponent.velocity.y = -SPEED;
         }
-
-        emitData[player.id] = {
-            layer: 'player',
-            components: {
-                Rectangle: {
-                    x: rectComponent.x,
-                    y: rectComponent.y,
-                    rotation: rectComponent.rotation
-                }
-            }
-        };
-
-        player.socket.emit('update', emitData);
     });
 };
 
