@@ -61,7 +61,17 @@ PlayerInput.prototype.update = function(delta) {
         }
 
         rectComponent.velocity.x += deltaX * delta;
+        if(rectComponent.velovity.x > 10){
+            rectComponent.velocity.x = 10;
+        } else if (rectComponent.velovity.x < -10){
+            rectComponent.velocity.x = -10;
+        }
         rectComponent.velocity.y += deltaY * delta;
+        if(rectComponent.velovity.y > 10){
+            rectComponent.velocity.y = 10;
+        } else if (rectComponent.velovity.y < -10){
+            rectComponent.velocity.y = -10;
+        }
 
         emitData[player.id] = {
             layer: 'player',
