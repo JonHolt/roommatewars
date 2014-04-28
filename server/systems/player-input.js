@@ -40,7 +40,7 @@ PlayerInput.prototype.update = function(delta) {
             });
         }
         //Manage shooting bullets after rotation is established
-        if(player.cooldown > 0){
+        if(player.cooldown > 0&& false){
          player.cooldown -= delta;
          } else if(player.keys.w){
             player.cooldown = 1;
@@ -103,10 +103,9 @@ var addBullet = function(rect,player){
             y:deltaY
         },
         w:17,
-        h:32,
-        solid:false
+        h:32
     });
-    rectPhys.solid = false;
+    rectPhys.rotation = rect.rotation;
     bullet.addComponent(rectPhys);
     bullet.addComponentAs(rectPhys,'Rectangle');
     bullet.components['SpriteSheet'] = 'Bullet';
