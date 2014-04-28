@@ -127,10 +127,10 @@ module.exports = {
         });
         sprites['Bullet'] = new SpriteSheet({
             src:'./img/Bullet.png',
-            width: 220,
-            height: 330,
-            frameWidth: 220,
-            frameHeight:330
+            width: 17,
+            height: 32,
+            frameWidth: 17,
+            frameHeight:32
         });
         sprites['Wall'].repeat = 'repeat';
 
