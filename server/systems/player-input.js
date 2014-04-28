@@ -16,7 +16,7 @@ var PlayerInput = function(physics) {
 
 Helper.inherit(PlayerInput, BehaviorSystem);
 
-PlayerInput.prototype.update = function() {
+PlayerInput.prototype.update = function(delta) {
     var self = this,
         SPEED = 5;
     PlayerManager.forEachPlayer(function(player) {
