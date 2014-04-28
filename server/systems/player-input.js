@@ -3,6 +3,7 @@
 var BehaviorSystem = require('psykick2d').BehaviorSystem,
     Helper = require('psykick2d').Helper,
     World= require('psykick2d').World,
+    ComponentUpdater = require('./../component-updater.js'),
 
     PlayerManager = require('../player-manager.js');
 
@@ -80,18 +81,15 @@ PlayerInput.prototype.update = function(delta) {
         rectComponent.velocity.x = deltaX;
         rectComponent.velocity.y = deltaY;
 
-        emitData[player.id] = {
-            layer: 'player',
-            components: {
-                Rectangle: {
-                    x: rectComponent.x,
-                    y: rectComponent.y,
-                    rotation: rectComponent.rotation
-                }
+        emitData = {
+            Rectangle: {
+                x: rectComponent.x,
+                y: rectComponent.y,
+                rotation: rectComponent.rotation
             }
         };
+        ComponentUpdater.updateEntity(entity, 'player', emitData);
 
-        //player.socket.emit('update', emitData);
     });
 };
 
@@ -108,7 +106,9 @@ var addBullet = function(rect,player){
     bulletData['components']=bullet.components;
     var sendData = {};
     sendData[bullet.id]=bulletData;
-    player.socket.emit('heaven',sendData);
+    PlayerManager.forEachPlayer(function(eachPlayer) {
+        eachPlayer.socket.emit('heaven',sendData);
+    });
 };
 
 module.exports = PlayerInput;

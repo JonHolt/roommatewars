@@ -1,7 +1,7 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 module.exports={
-    "playername":"Jon",
-    "server":"192.168.1.4:4242"
+    "playerName":"Mike's a Dick",
+    "server":"http://localhost:4242"
 }
 },{}],2:[function(require,module,exports){
 'use strict';
@@ -170,6 +170,9 @@ module.exports = {
                 var components = data[key].components;
                 if(data[key].layer === 'terrain'){
                     var changeEntity = backgroundDrawSystem.entities[key];
+                    if(changeEntity === null){
+                        continue;
+                    }
                     for(var comp in components){
                         var changeComponent = changeEntity.getComponent(comp);
                         module.exports.copyComponent(changeComponent, components[comp]);
@@ -191,6 +194,7 @@ module.exports = {
 
         //update the living and dead entities
         sock.on('heaven',function(data){
+            debugger;
             for(var key in data){
                 if(data[key]==='dead'){
                     playerDrawSystem.removeEntity(key);
@@ -205,7 +209,7 @@ module.exports = {
                             newEntity.addComponentAs(sprites[entityData.components[compKey]],compKey);
                         } else {
                             var addComponent = new Component();
-                            addComponent = this.copyComponent(addComponent, entityData.components[compKey]);
+                            module.exports.copyComponent(addComponent, entityData.components[compKey]);
                             newEntity.addComponentAs(addComponent,compKey);
                         }
                     }
@@ -1483,17 +1487,9 @@ Layer.prototype.setZIndex = function(zIndex) {
  * @param {System} system
  */
 Layer.prototype.addSystem = function(system) {
-    if (!(system instanceof System)) {
+    /*if (!(system instanceof System)) {
         throw new Error('Invalid argument: \'system\' must be an instance of System');
-    }
-
-    if (system.parentLayer === null) {
-        system.parentLayer = this;
-    } else {
-        var err = new Error('System already belongs to another Layer');
-        err.system = system;
-        throw err;
-    }
+    }*/
 
     if (system instanceof BehaviorSystem && this.behaviorSystems.indexOf(system) === -1) {
         this.behaviorSystems.push(system);

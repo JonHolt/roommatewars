@@ -115,6 +115,9 @@ module.exports = {
                 var components = data[key].components;
                 if(data[key].layer === 'terrain'){
                     var changeEntity = backgroundDrawSystem.entities[key];
+                    if(changeEntity === null){
+                        continue;
+                    }
                     for(var comp in components){
                         var changeComponent = changeEntity.getComponent(comp);
                         module.exports.copyComponent(changeComponent, components[comp]);
@@ -136,6 +139,7 @@ module.exports = {
 
         //update the living and dead entities
         sock.on('heaven',function(data){
+            debugger;
             for(var key in data){
                 if(data[key]==='dead'){
                     playerDrawSystem.removeEntity(key);
@@ -150,7 +154,7 @@ module.exports = {
                             newEntity.addComponentAs(sprites[entityData.components[compKey]],compKey);
                         } else {
                             var addComponent = new Component();
-                            addComponent = module.exports.copyComponent(addComponent, entityData.components[compKey]);
+                            module.exports.copyComponent(addComponent, entityData.components[compKey]);
                             newEntity.addComponentAs(addComponent,compKey);
                         }
                     }
