@@ -194,11 +194,10 @@ module.exports = {
 
         //update the living and dead entities
         sock.on('heaven',function(data){
-            debugger;
             for(var key in data){
                 if(data[key]==='dead'){
-                    playerDrawSystem.removeEntity(key);
-                    backgroundDrawSystem.removeEntity(key);
+                    playerDrawSystem.removeEntity(key|0);
+                    backgroundDrawSystem.removeEntity(key|0);
                     //kill from animation system too.
                 }else{
                     var newEntity = new Entity(key|0),
@@ -222,6 +221,8 @@ module.exports = {
                     }
                 }
             }
+            playerLayer.visible = true;
+            terrainLayer.visible = true;
         });
 
         //An event to find out who I am

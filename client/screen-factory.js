@@ -141,8 +141,8 @@ module.exports = {
         sock.on('heaven',function(data){
             for(var key in data){
                 if(data[key]==='dead'){
-                    playerDrawSystem.removeEntity(key);
-                    backgroundDrawSystem.removeEntity(key);
+                    playerDrawSystem.removeEntity(key|0);
+                    backgroundDrawSystem.removeEntity(key|0);
                     //kill from animation system too.
                 }else{
                     var newEntity = new Entity(key|0),
