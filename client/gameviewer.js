@@ -3,14 +3,15 @@ var world = require('psykick2d').World;
 var spriteComponent = require('psykick2d').Components.GFX.SpriteSheet;
 var rectangle = require('psykick2d').Components.Shape.Rectangle;
 
-var map = require('./roomviewer/testMap.json');
+var map = 
 
 world.init({
 	width:900,
 	height:600,
 	backgroundColor:"#AAA"
 });
-	
+
+/*	
 var layer = world.createLayer();
 var sprite = new spriteSystem();
 layer.addSystem(sprite);
@@ -89,3 +90,80 @@ sprite.addEntity(player1);
 sprite.addEntity(player4);
 sprite.addEntity(player3);
 sprite.addEntity(player2);
+*/
+
+// module.exports = {
+//    startGame: function() {
+        var mapData = require('./roomviewer/testMap.json'),
+            terrainLayer = World.createLayer(),
+            playerLayer = World.createLayer(),
+//            playerInputSystem = new PlayerInput(),
+            clientData = {};
+
+        for (var layerName in mapData) {
+            var layer = (layerName === 'terrain') ? terrainLayer :
+                        (layerName === 'player') ? playerLayer : null,
+                layerData = mapData[layerName];
+            if (layer === null) {
+                throw new Error('Invalid layer in map: ' + layerName);
+            }
+
+            for (var entityType in layerData) {
+                var entities = layerData[entityType],
+                    createEntity = function(){};
+
+                switch (entityType) {
+                    case 'walls':
+                        createEntity = createWall;
+                        break;
+                    case 'destructibleWalls':
+                        createEntity = createDestructibleWall;
+                        break;
+
+                    case 'spawnPoints':
+                        createEntity = createPlayer;
+                        break;
+                }
+
+                for (var i = 0, len = entities.length; i < len; i++) {
+                    var newEntity = createEntity(entities[i]),
+                        components = {};
+
+                    if (entityType === 'spawnPoints') {
+//                        playerInputSystem.addEntity(newEntity);
+                    }
+
+                    for (var componentName in newEntity.components) {
+                        if (componentName === 'RectPhysicsBody') {
+                            continue;
+                        }
+
+                        var componentData = newEntity.components[componentName];
+                        if (componentName === 'Rectangle') {
+                            components.Rectangle = {
+                                x: componentData.x,
+                                y: componentData.y,
+                                w: componentData.w,
+                                h: componentData.h
+                            };
+                        } else {
+                            components[componentName] = componentData;
+                        }
+                    }
+                    clientData[newEntity.id] = {
+                        layer: layerName,
+                        components: components
+                    };
+                }
+            }
+        }
+
+//        playerLayer.addSystem(playerInputSystem);
+//        World.pushLayer(playerLayer);
+
+//        PlayerManager.broadcast('start', clientData);
+//        PlayerManager.forEachPlayer(function(player) {
+//            player.socket.emit('playerID', player.id);
+//        });
+//    }
+//};
