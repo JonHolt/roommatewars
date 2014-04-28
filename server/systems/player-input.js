@@ -5,6 +5,7 @@ var BehaviorSystem = require('psykick2d').BehaviorSystem,
     World= require('psykick2d').World,
     ComponentUpdater = require('./../component-updater.js'),
     RectanglePhysics = require('psykick2d').Components.Physics.RectPhysicsBody,
+    Bullet = require('./../components/bullet.js'),
 
     PlayerManager = require('../player-manager.js'),
     ComponentUpdater = require('../component-updater.js');
@@ -40,7 +41,7 @@ PlayerInput.prototype.update = function(delta) {
             });
         }
         //Manage shooting bullets after rotation is established
-        if(player.cooldown > 0&& false){
+        if(player.cooldown > 0){
          player.cooldown -= delta;
          } else if(player.keys.w){
             player.cooldown = 1;
@@ -104,8 +105,12 @@ var addBullet = function(rect,player){
         },
         w:17,
         h:32
+    }),
+        bulletComp = new Bullet({
+            playerID:player.id
     });
     rectPhys.rotation = rect.rotation;
+    bullet.addComponent(bulletComp);
     bullet.addComponent(rectPhys);
     bullet.addComponentAs(rectPhys,'Rectangle');
     bullet.components['SpriteSheet'] = 'Bullet';

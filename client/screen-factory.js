@@ -139,7 +139,6 @@ module.exports = {
 
         //update the living and dead entities
         sock.on('heaven',function(data){
-            debugger;
             for(var key in data){
                 if(data[key]==='dead'){
                     playerDrawSystem.removeEntity(key);
@@ -167,6 +166,8 @@ module.exports = {
                     }
                 }
             }
+            playerLayer.visible = true;
+            terrainLayer.visible = true;
         });
 
         //An event to find out who I am
