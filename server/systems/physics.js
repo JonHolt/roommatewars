@@ -101,6 +101,11 @@ Physics.prototype.update = function(delta) {
 
         if (body.solid) {
             var collisions = this._tree.getCollisions(entity, body);
+            if (isBullet && collisions.length > 0) {
+                this.removeEntity(entity);
+                ComponentUpdater.kill(entity);
+                continue;
+            }
             for (var j = 0, len2 = collisions.length; j < len2; j++) {
                 var other = collisions[j],
                     otherBody = other.getComponent('RectPhysicsBody'),

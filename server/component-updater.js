@@ -10,6 +10,7 @@ function merge(obj, changes) {
 }
 
 var data = {},
+    heavenMessage = {},
     dirty = false;
 
 var ComponentUpdater = {
@@ -30,6 +31,15 @@ var ComponentUpdater = {
         }
     },
 
+    kill: function(entity) {
+        dirty = true;
+        if (data[entity.id]) {
+            delete data[entity.id];
+        }
+
+        heavenMessage[entity.id] = 'dead';
+    },
+
     /**
      * Sends out the updates to each of the players
      */
@@ -39,11 +49,15 @@ var ComponentUpdater = {
         }
 
         PlayerManager.forEachPlayer(function(player) {
+            if (Object.keys(heavenMessage).length > 0) {
+                player.socket.emit('heaven', heavenMessage);
+            }
             player.socket.emit('update', data);
         });
 
         dirty = false;
         data = {};
+        heavenMessage = {};
     }
 };
 
