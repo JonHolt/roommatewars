@@ -73,8 +73,11 @@ Physics.prototype.removeEntity = function(entity) {
 
 Physics.prototype.update = function(delta) {
     for (var i = 0, len = this.actionOrder.length; i < len; i++) {
-        var entity = this.actionOrder[i],
-            body = entity.getComponent('RectPhysicsBody'),
+        var entity = this.actionOrder[i];
+        if(!entity){
+            continue;
+        }
+        var body = entity.getComponent('RectPhysicsBody'),
             spriteSheet = entity.getComponent('SpriteSheet'),
             isBullet = spriteSheet === 'Bullet',
             layerName = (spriteSheet === 'Wall') ? 'terrain' : 'player';

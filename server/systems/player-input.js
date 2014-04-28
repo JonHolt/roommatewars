@@ -44,10 +44,10 @@ PlayerInput.prototype.update = function(delta) {
         if(player.cooldown > 0){
             player.cooldown -= delta;
          } else if(player.keys.w){
-            player.cooldown = 1;
+            player.cooldown = .5;
             addBullet.call(self,rectComponent,player);
          } else if(player.keys.s){
-            player.cooldown = .9; //slightly smaller cooldown for panic mode?
+            player.cooldown = .4; //slightly smaller cooldown for panic mode?
             var bulletDirection = rectComponent.rotation + Math.PI + (Math.random()*2-1),
                 bulletRect = Helper.defaults({rotation:bulletDirection},rectComponent);
             addBullet.call(self,bulletRect,player);
