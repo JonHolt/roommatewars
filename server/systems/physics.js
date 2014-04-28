@@ -80,6 +80,7 @@ Physics.prototype.update = function(delta) {
         var body = entity.getComponent('RectPhysicsBody'),
             spriteSheet = entity.getComponent('SpriteSheet'),
             isBullet = spriteSheet === 'Bullet',
+            isPlayer = spriteSheet.indexOf("Player") > -1,
             layerName = (spriteSheet === 'Wall') ? 'terrain' : 'player';
         if (layerName === 'terrain') {
             continue;
@@ -104,13 +105,9 @@ Physics.prototype.update = function(delta) {
 
         if (body.solid) {
             var collisions = this._tree.getCollisions(entity, body);
-            if (isBullet && collisions.length > 0) {
-                this.removeEntity(entity);
-                ComponentUpdater.kill(entity);
-                continue;
-            }
             for (var j = 0, len2 = collisions.length; j < len2; j++) {
                 var other = collisions[j],
+
                     otherBody = other.getComponent('RectPhysicsBody'),
                     sides = {
                         left: body.x,
@@ -126,6 +123,27 @@ Physics.prototype.update = function(delta) {
                     },
                     verticalIntersection = 0,
                     horizontalIntersection = 0;
+
+                if (isBullet && other.id === entity.getComponent('Bullet').playerID) {
+                    continue;
+                } else if (isBullet){
+                    this.removeEntity(entity);
+                    ComponentUpdater.kill(entity);
+                    continue;
+                }
+
+                if(isPlayer && other.getComponent('Bullet')){
+                    var bulletInfo = other.getComponent('Bullet');
+                    if(bulletInfo.playerID !== entity.id){
+                        var info = entity.getComponent('PlayerInfo');
+                        info.health -= bulletInfo.damage;
+                        if(info.health <= 0){
+                            this.removeEntity(entity);
+                            ComponentUpdater.kill(entity);
+                        }
+                    }
+                    continue;
+                }
 
                 if (sides.bottom > otherSides.top && sides.top < otherSides.top) {
                     verticalIntersection = -(sides.bottom - otherSides.top);

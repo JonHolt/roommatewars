@@ -10,7 +10,8 @@ var ComponentUpdater = require('./component-updater.js'),
     Components = {
         SpriteSheet: require('psykick2d').Components.GFX.SpriteSheet,
         RectPhysicsBody: require('psykick2d').Components.Physics.RectPhysicsBody,
-        Color: require('psykick2d').Components.GFX.Color
+        Color: require('psykick2d').Components.GFX.Color,
+        PlayerInfo: require('./components/player-info.js')
     },
 
     WALL_SIZE = 32;
@@ -69,8 +70,10 @@ var createPlayer = function(data) {
             y: data.y,
             w: 32,
             h: 32
-        });
+        }),
+        pInfo = new Components.PlayerInfo({});
     rectComponent.rotation = 0;
+    player.addComponent(pInfo);
     player.addComponent(rectComponent);
     player.addComponentAs(rectComponent, 'Rectangle');
     player.components['SpriteSheet'] = 'Player' + playerCount;

@@ -97,8 +97,8 @@ var addBullet = function(rect,player){
     var deltaX = Math.cos(rect.rotation) * 15,
         deltaY = Math.sin(rect.rotation) * 15;
     var rectPhys = new RectanglePhysics({
-        x:rect.x,
-        y:rect.y,
+        x:rect.x+deltaX,
+        y:rect.y+deltaY,
         velocity:{
             x:deltaX,
             y:deltaY
