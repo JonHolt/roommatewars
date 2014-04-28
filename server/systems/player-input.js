@@ -40,8 +40,8 @@ PlayerInput.prototype.update = function(delta) {
             });
         }
         //Manage shooting bullets after rotation is established
-        if(player.cooldown > 0&& false){
-         player.cooldown -= delta;
+        if(player.cooldown > 0){
+            player.cooldown -= delta;
          } else if(player.keys.w){
             player.cooldown = 1;
             addBullet.call(self,rectComponent,player);

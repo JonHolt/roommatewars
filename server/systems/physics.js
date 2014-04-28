@@ -4,7 +4,9 @@ var Helper = require('psykick2d').Helper,
     BehaviorSystem = require('psykick2d').BehaviorSystem,
     QuadTree = require('psykick2d').Helpers.QuadTree,
 
-    ComponentUpdater = require('../component-updater.js');
+    ComponentUpdater = require('../component-updater.js'),
+
+    BULLET_ROTATION = 10;
 
 /**
  * Determines if two objects are colliding
@@ -69,7 +71,7 @@ Physics.prototype.removeEntity = function(entity) {
     }
 };
 
-Physics.prototype.update = function() {
+Physics.prototype.update = function(delta) {
     for (var i = 0, len = this.actionOrder.length; i < len; i++) {
         var entity = this.actionOrder[i],
             body = entity.getComponent('RectPhysicsBody'),
@@ -77,6 +79,15 @@ Physics.prototype.update = function() {
             layerName = (spriteSheet === 'Wall') ? 'terrain' : 'player';
         if (layerName === 'terrain') {
             continue;
+        }
+
+        if (spriteSheet === 'Bullet') {
+            body.rotation += BULLET_ROTATION * delta;
+            ComponentUpdater.updateEntity(entity, layerName, {
+                Rectangle: {
+                    rotation: body.rotation
+                }
+            });
         }
 
         var oldPosition = {
