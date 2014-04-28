@@ -93,9 +93,19 @@ PlayerInput.prototype.update = function(delta) {
 
 var addBullet = function(rect,player){
     var bullet = World.createEntity();
-    rect.velocity.x = Math.cos(rect.rotation) * 15;
-    rect.velocity.y = Math.sin(rect.rotation) * 15;
-    var rectPhys = new RectanglePhysics(rect);
+    var deltaX = Math.cos(rect.rotation) * 15,
+        deltaY = Math.sin(rect.rotation) * 15;
+    var rectPhys = new RectanglePhysics({
+        x:rect.x,
+        y:rect.y,
+        velocity:{
+            x:deltaX,
+            y:deltaY
+        },
+        w:17,
+        h:32,
+        solid:false
+    });
     rectPhys.solid = false;
     bullet.addComponent(rectPhys);
     bullet.addComponentAs(rectPhys,'Rectangle');
