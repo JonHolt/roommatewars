@@ -4,6 +4,7 @@ var BehaviorSystem = require('psykick2d').BehaviorSystem,
     Helper = require('psykick2d').Helper,
     World= require('psykick2d').World,
     ComponentUpdater = require('./../component-updater.js'),
+    Rectangle = require('psykick2d').Components.Physics.RectPhysicsBody,
 
     PlayerManager = require('../player-manager.js');
 
@@ -97,8 +98,9 @@ var addBullet = function(rect,player){
     var bullet = World.createEntity();
     rect.velocity.x = Math.cos(rect.rotation) * 15;
     rect.velocity.y = Math.sin(rect.rotation) * 15;
-    bullet.addComponent(rect);
-    bullet.addComponentAs(rect,'Rectangle');
+    var rectPhys = new Rectangle(rect);
+    bullet.addComponent(rectPhys);
+    bullet.addComponentAs(rectPhys,'Rectangle');
     bullet.components['SpriteSheet'] = 'Bullet';
     this.physics.addEntity(bullet);
     var bulletData= {};
