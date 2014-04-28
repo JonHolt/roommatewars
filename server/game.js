@@ -50,9 +50,9 @@ var createDestructibleWall = function(data) {
     // Use this until we decide how to do them
     return createWall(data);
 };
+var playerCount = 0;
 var createPlayer = function(data) {
-    var playerData = null,
-        playerCount = 0;
+    var playerData = null;
     PlayerManager.forEachPlayer(function(p) {
         if (playerData !== null) {
             return;
