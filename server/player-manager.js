@@ -5,7 +5,7 @@ var PlayerManager = {
 
     /**
      * Adds a new player to the collection
-     * @param name
+     * @param socket
      */
     addPlayer: function(socket) {
         var data = JSON.parse(socket.handshake.query.data),

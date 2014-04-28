@@ -6,7 +6,8 @@ var BehaviorSystem = require('psykick2d').BehaviorSystem,
     ComponentUpdater = require('./../component-updater.js'),
     Rectangle = require('psykick2d').Components.Physics.RectPhysicsBody,
 
-    PlayerManager = require('../player-manager.js');
+    PlayerManager = require('../player-manager.js'),
+    ComponentUpdater = require('../component-updater.js');
 
 var PlayerInput = function(physics) {
     this.physics = physics;
@@ -15,19 +16,28 @@ var PlayerInput = function(physics) {
 
 Helper.inherit(PlayerInput, BehaviorSystem);
 
-PlayerInput.prototype.update = function(delta) {
+PlayerInput.prototype.update = function() {
     var self = this,
         SPEED = 5;
     PlayerManager.forEachPlayer(function(player) {
         var entity = self.entities[player.id],
-            rectComponent = entity.getComponent('RectPhysicsBody'),
-            emitData = {};
+            rectComponent = entity.getComponent('RectPhysicsBody');
 
         if (player.keys.left) {
             rectComponent.rotation -= SPEED * Math.PI / 180;
+            ComponentUpdater.updateEntity(entity, 'player', {
+                Rectangle: {
+                    rotation: rectComponent.rotation
+                }
+            });
         }
         if (player.keys.right) {
             rectComponent.rotation += SPEED * Math.PI / 180;
+            ComponentUpdater.updateEntity(entity, 'player', {
+                Rectangle: {
+                    rotation: rectComponent.rotation
+                }
+            });
         }
         //Manage shooting bullets after rotation is established
         if(player.cooldown > 0){
@@ -60,8 +70,8 @@ PlayerInput.prototype.update = function(delta) {
                 direction += Math.PI / 4;
             }
 
-            deltaX = Math.cos(direction) * SPEED;
-            deltaY = Math.sin(direction) * SPEED;
+            rectComponent.velocity.x = Math.cos(direction) * SPEED;
+            rectComponent.velocity.y = Math.sin(direction) * SPEED;
         } else {
             if (player.keys.a && !player.keys.d) {
                 direction = rectComponent.rotation - Math.PI / 2;
@@ -71,26 +81,13 @@ PlayerInput.prototype.update = function(delta) {
             }
 
             if (direction !== null) {
-                deltaX = Math.cos(direction) * SPEED;
-                deltaY = Math.sin(direction) * SPEED;
+                rectComponent.velocity.x = Math.cos(direction) * SPEED;
+                rectComponent.velocity.y = Math.sin(direction) * SPEED;
             } else {
                 rectComponent.velocity.x = 0;
                 rectComponent.velocity.y = 0;
             }
         }
-
-        rectComponent.velocity.x = deltaX;
-        rectComponent.velocity.y = deltaY;
-
-        emitData = {
-            Rectangle: {
-                x: rectComponent.x,
-                y: rectComponent.y,
-                rotation: rectComponent.rotation
-            }
-        };
-        ComponentUpdater.updateEntity(entity, 'player', emitData);
-
     });
 };
 

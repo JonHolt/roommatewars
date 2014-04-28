@@ -1,7 +1,13 @@
 'use strict';
 
-var Helper = require('psykick2d').Helper,
-    PlayerManager = require('./player-manager.js');
+var PlayerManager = require('./player-manager.js');
+
+function merge(obj, changes) {
+    for (var key in changes) {
+        obj[key] = changes[key];
+    }
+    return obj;
+}
 
 var data = {},
     dirty = false;
@@ -17,7 +23,11 @@ var ComponentUpdater = {
         dirty = true;
         var entityData = data[entity.id] = data[entity.id] || {};
         entityData.layer = layerName;
-        entityData.components = Helper.defaults(changes, entityData.components);
+        entityData.components = entityData.components || {};
+        for (var key in changes) {
+            entityData.components[key] = entityData.components[key] || {};
+            merge(entityData.components[key], changes[key]);
+        }
     },
 
     /**
@@ -28,7 +38,6 @@ var ComponentUpdater = {
             return;
         }
 
-        console.log(data);
         PlayerManager.forEachPlayer(function(player) {
             player.socket.emit('update', data);
         });
