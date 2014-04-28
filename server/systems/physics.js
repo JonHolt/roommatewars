@@ -76,12 +76,13 @@ Physics.prototype.update = function(delta) {
         var entity = this.actionOrder[i],
             body = entity.getComponent('RectPhysicsBody'),
             spriteSheet = entity.getComponent('SpriteSheet'),
+            isBullet = spriteSheet === 'Bullet',
             layerName = (spriteSheet === 'Wall') ? 'terrain' : 'player';
         if (layerName === 'terrain') {
             continue;
         }
 
-        if (spriteSheet === 'Bullet') {
+        if (isBullet) {
             body.rotation += BULLET_ROTATION * delta;
             ComponentUpdater.updateEntity(entity, layerName, {
                 Rectangle: {
