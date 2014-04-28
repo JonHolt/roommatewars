@@ -1,6 +1,41 @@
 <h1>Roommate Wars</h1>
 <h2>Game Design</h2>
+<p>Basic Game Idea-  Our game is called Roommate Wars. You and a couple roommates get in a fight and start throwing 
+		things at each other till only one is left standing. It is a multiplayer combat game from a top-down 2D perspective.
+		It has a lot of competition and basic controls so anyone should be able to play.</p>
 
+<p>Decision Making-  We would like to have players able to chose which room mate they are but that hasn't been implemented yet.
+		With the multiplayer aspect, the player must choose who to attack first. And of course, there are going to be multiple buffs 
+		player can go for. When a player is killed, any buff they had becomes available again. We do not yet have buffs working so at
+		the moment there are not many available decisions.</p>
+		
+<p>Goals-  Our game has a very simple goal, kill all of your roommates! Only the survivor wins.</p>
+
+<p>Opposition-  The other players. Originally, we wanted to have npc's as well but went more toward online multiplayer. We thought of giving
+		each player a computer controlled army but couldn't get the npc's to properly move around the map while staying close to the player.</p>
+
+<p>Managing Resources-  Our game currently does not have many resources. We want to add buffs in different locations that the player can find.
+		Once a player has the buff, they keep it until they die. Once someone dies, all the other players would need to choose which of the
+		dead players buffs they want to go for and race the other players there while still defending.</p>
+
+<p>Game Tokens-  The main token is the player itself. We also have tokens for bullets and would like to add the ability to "pick a class"
+		and choose what type of bullet your character throws. Right now we just have a PBR beer can for The Drunk. There would also be things
+		like, hair ties for The Girlfriend, wads of garbage for The Slob, and joints for The Stoner. Finally, there would be tokens for the different
+		possible buffs a player can have. Power- Attacks do more damamge. Health- Double health. Speed- Your player moves around faster. 
+		Range- your attack go farther. Buffs were the last of the main things we wanted to work on and didn't get time to finish them.</p>
+		
+<p>Information-  The player doesn't need much information. On the main screen is some simple instructions for controlling your character.</p>		
+
+<p>Color- Currently our game has almost no color to it. Our focus was not graphics so currently there is a very basic set of images.
+		We want the game to feel like a couple of roommates, running around their apartment, attacking each other. Right now the only
+		element that actually adds to the color is the PBR beer can bullets. Future development would include new sprites for each player
+		along with a matching bullets and a couple of different textures for the map to make it feel like an apartment.</p>
+		
+<p>Diplomacy-  Any game with multiplayer will have some diplomacy because the players can choose to work together against another. If we get
+		the buffs implemented, handling who gets what buff or who goes after what buff when someone dies will add some diplomacy.</p>
+		
+<p>Variety of Encounter-  At the moment, the map won't change much but the online multiplayer aspect helps ensure that no 2 fights will be the same.</p>
+	
 <h2>Instructions</h2>
 <ol>
 <li>Install Node.js from <a href="http://nodejs.org" target="_blank">nodejs.org</a></li>
@@ -72,4 +107,21 @@ would make a ring of bullets around myself and run around the map. We fixed this
 </ul>
 <h2>Future Development</h2>
 
+<p>Graphics-  Getting a better set of sprites for characters and bullets and walls would really help it feel like room mates fighting in an 
+		apartment.</p>
+
+<p>AI-  Adding in some npc's for when less than 4 people are playing would be a big help. Or letting the players choose how many npc's are
+		in each game. Possibly trying to have each player have 2 npc's that are tied to the player and travel around the map.</p>
+
+<p>Multiple Game rooms-  At the moment, our server only works for one game running at a time. Allowing multiple rooms and allowing people to
+		pick which room they join so friends could play together or you could try and meet new people.</p>	
+
+<p>Buffs- This is one aspect we really wanted to get into our game but did not have time to finish. Allowing players to fight for power ups and
+		collect them after people are dead will add a lot of diplomacy and decision making. You may want to kill one player over another 
+		because they have a buff that makes them much harder to kill, or they got most of the buffs and are overpowered, or they got the buff
+		you prefer so naturally, you must kill them first.</p>		
+		
+<p>Random Map Generation-  At the moment we have just one json map file. Writing some algorithms to generate random maps would greatly increase
+		variety of encounter.</p>		
+		
 <h2>Group Information</h2>
