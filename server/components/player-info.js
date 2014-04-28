@@ -8,7 +8,7 @@ var PlayerInfo = function(options){
 
     var defaults = {
         damage: 10,
-        health: 110
+        health: 100
     }
 
     options = Helper.defaults(options,defaults);

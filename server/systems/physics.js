@@ -124,24 +124,23 @@ Physics.prototype.update = function(delta) {
                     verticalIntersection = 0,
                     horizontalIntersection = 0;
 
-                if (isBullet && other.id === entity.getComponent('Bullet').playerID) {
+                if (isBullet && other.id === entity.getComponent('Bullet').playerID){
                     continue;
                 } else if (isBullet){
                     this.removeEntity(entity);
                     ComponentUpdater.kill(entity);
+                    if(other.getComponent('PlayerInfo')){
+                        var pInfo = other.getComponent('PlayerInfo');
+                        pInfo.health -= entity.getComponent('Bullet').damage;
+                        if(pInfo.health <= 0){
+                            this.removeEntity(other);
+                            ComponentUpdater.kill(other);
+                        }
+                    }
                     continue;
                 }
 
                 if(isPlayer && other.getComponent('Bullet')){
-                    var bulletInfo = other.getComponent('Bullet');
-                    if(bulletInfo.playerID !== entity.id){
-                        var info = entity.getComponent('PlayerInfo');
-                        info.health -= bulletInfo.damage;
-                        if(info.health <= 0){
-                            this.removeEntity(entity);
-                            ComponentUpdater.kill(entity);
-                        }
-                    }
                     continue;
                 }
 

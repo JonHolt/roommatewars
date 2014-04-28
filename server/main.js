@@ -9,7 +9,7 @@ var Game = require('./game.js'),
         Game: 1
     },
     currentMode = GameModes.Lobby,
-    MAX_PLAYERS = 1,
+    MAX_PLAYERS = 2,
     numPlayers = 0;
 
 io.sockets.on('connection', function(socket) {

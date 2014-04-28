@@ -107,7 +107,8 @@ var addBullet = function(rect,player){
         h:32
     }),
         bulletComp = new Bullet({
-            playerID:player.id
+            playerID:player.id,
+            damage:10
     });
     rectPhys.rotation = rect.rotation;
     bullet.addComponent(bulletComp);

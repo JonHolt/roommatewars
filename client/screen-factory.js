@@ -4,7 +4,8 @@ var World = require('psykick2d').World,
     Helper = require('psykick2d').Helper,
     Component = require('psykick2d').Component,
     SpriteSheet = require('psykick2d').Components.GFX.SpriteSheet,
-    Entity = require('psykick2d').Entity;
+    Entity = require('psykick2d').Entity,
+    playerID;
 
 
 module.exports = {
@@ -79,6 +80,7 @@ module.exports = {
         });
         sprites['Wall'].repeat = 'repeat';
 
+        var KeySystem =new KeySendSystem(sock);
         //initialize the game state with information from the server.
         sock.on('start',function(data){
             var len = Object.keys(data).length;
@@ -102,9 +104,10 @@ module.exports = {
                     throw new Error('Unexpected Layer '+ entityData.layer);
                 }
             }
+
             terrainLayer.addSystem(backgroundDrawSystem);
             playerLayer.addSystem(playerDrawSystem);
-            playerLayer.addSystem(new KeySendSystem(sock));
+            playerLayer.addSystem(KeySystem);
             World.pushLayer(terrainLayer);
             World.pushLayer(playerLayer);
         });
@@ -143,6 +146,9 @@ module.exports = {
                 if(data[key]==='dead'){
                     playerDrawSystem.removeEntity(key|0);
                     backgroundDrawSystem.removeEntity(key|0);
+                    if(key === playerID){
+                        playerLayer.removeSystem(KeySystem);
+                    }
                     //kill from animation system too.
                 }else{
                     var newEntity = new Entity(key|0),
@@ -176,6 +182,7 @@ module.exports = {
             var cam = new PlayerCam(player.getComponent('Rectangle'));
             playerLayer.camera = cam;
             terrainLayer.camera = cam;
+            playerID = data;
             //backgroundDrawSystem.camera = cam;
         });
     },
