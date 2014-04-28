@@ -1,0 +1,75 @@
+<h1>Roommate Wars</h1>
+<h2>Game Design</h2>
+
+<h2>Instructions</h2>
+<ol>
+<li>Install Node.js from <a href="http://nodejs.org" target="_blank">nodejs.org</a></li>
+<li>Restart your console just in case</li>
+<li>From the root of the roommatewars folder(the one with this file in it), run the command <strong>node server/main</strong></li>
+<li>The server should now be running in your terminal.</li>
+<li>At this point you can navigate to the client folder and open index.html with Chrome</li>
+</ol>
+<h2>Screen Shots</h2>
+
+<h2>Software Design</h2>
+<h3>Decisions</h3>
+<ul>
+<li>
+We decided to switch from XNA to Psykick2d. This decision was partially because
+you said you wanted the game to be available to more platforms if it wasn't going to 
+be graphically intensive. Psykick2d, running in Node, is able to be run as a server on
+Windows, Mac, or Linux. The Client is then able to run in the browser on just about anything.
+</li>
+<li>
+Another great thing about Psykick2d is the Entity-Component system it uses. Essentially instead of
+creating a game object for every type of thing in your game, you can create Components which store
+the data that is relevant to common behaviors of things in the game. You then create 
+Entities to represent each thing in the game, and add the components that apply to them.
+From there you write systems that act on the entities using their components. While the whole
+set-up sounds more complicated than oop, it is nice because it is more flexible because the systems
+don't care what the entity is as long as it has the right components. It saves a lot of stress of planning
+out polymorphic inheritance trees.
+</li>
+<li>
+We also decided to use a network model where the server has complete authority. While we had previously
+considered having all of the clients and the server run game updates and then work out the differences,
+we decided that it would be less intensive on the client side to have it only bear the burden of drawing.
+This way the entire system acts as MVC, with the server being the Model and the client acting as view and controller.
+</li>
+<li>
+As far as player movement goes, we considered using a grid system and locking player movement to that grid.
+The server would update their position and then that would be final, but we then decided to move to a velocity
+based system where players would be moved in the direction of their velocity by a number of pixels. This ended up
+making collision work out better when Devon wrote the physics system.
+</li>
+</ul>
+<h3>Problems</h3>
+<ul>
+<li>
+One problem that we encountered was the issue of letting the client know when an entity has been destroyed or created.
+The reason this ended up being a problem is because the 'update' message sent from the server to the client references
+the changes that occurred by the ID of the object that was changed. For a while before we addressed this issue the client
+would sometimes crash when the server made a new bullet and then sent changes about a bullet the client didn't know about.
+To address this issue we made a new type of message to be sent from the server to the clients that told the clients the
+details of new entities or to kill off old ones. We called this new message 'heaven' because dead things go to it and things are
+born from it.
+</li>
+<li>
+We had countless issues with insuring that the data being sent by the server lined up properly on the client. This is not
+due to any issues with socket.io thankfully, but it was still a pain to make sure everything was behaving properly. For example,
+there was one case with the bullets(beer cans) where the bullets were consistently spawning a certain distance from the player
+who shot it, and wasn't colliding properly with the targets. Eventually we discovered that the sprite representing the beer can
+was assumed by the client to be much larger than it really was. It was being drawn in the bottom-left corner of an area the size
+of what the client thought was the sprite, with the physics body in the top-right.
+</li>
+<li>
+Another issue encountered in Psykick2d was the issue of copying components between entities. Because components are javascript objects,
+any attempt to assign them to another entity would result in a shallow copy. I encountered this (once again) with bullets. When creating a new bullet
+I would assign its position component to that of the player that shot it, so that it would originate from the shooter. This resulted in a hilarious bug
+where bullets would spawn next to the player and then follow the player's movement exactly. Just for fun I played around with this bug for a bit where I
+would make a ring of bullets around myself and run around the map. We fixed this by writing a deep copy method for copying components.
+</li>
+</ul>
+<h2>Future Development</h2>
+
+<h2>Group Information</h2>
