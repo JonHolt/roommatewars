@@ -1,5 +1,14 @@
+<head>
+<title>Roommate Wars!</title>
+<style>
+img{
+width:30%
+}
+</style>
+</head>
+<body>
 <h1>Roommate Wars</h1>
-<h2>Game Design</h2>
+<h2>Game Design (Devon)</h2>
 <p>Basic Game Idea-  Our game is called Roommate Wars. You and a couple roommates get in a fight and start throwing 
 		things at each other till only one is left standing. It is a multiplayer combat game from a top-down 2D perspective.
 		It has a lot of competition and basic controls so anyone should be able to play.</p>
@@ -36,17 +45,20 @@
 		
 <p>Variety of Encounter-  At the moment, the map won't change much but the online multiplayer aspect helps ensure that no 2 fights will be the same.</p>
 	
-<h2>Instructions</h2>
+<h2>Instructions (Jonathan)</h2>
 <ol>
-<li>Install Node.js from <a href="http://nodejs.org" target="_blank">nodejs.org</a></li>
-<li>Restart your console just in case</li>
-<li>From the root of the roommatewars folder(the one with this file in it), run the command <strong>node server/main</strong></li>
+<li>Install Node.js from <a href="http://nodejs.org" target="_blank">nodejs.org.</a></li>
+<li>Restart your console just in case.</li>
+<li>From the root of the roommatewars folder(the one with this file in it), run the command <strong>node server/main</strong>.</li>
 <li>The server should now be running in your terminal.</li>
-<li>At this point you can navigate to the client folder and open index.html with Chrome</li>
+<li>At this point you can navigate to the client folder and open index.html with Chrome or Firefox (the psykick implementation isn't complete for safari yet).</li>
+<li>If you run into any problems send <a href="mailto:jonathanholt92@gmail.com">me</a> an email and I'll try to help you get it worked out.</li>
 </ol>
-<h2>Screen Shots</h2>
-
-<h2>Software Design</h2>
+<h2>Screen Shots (Both)</h2>
+<img src="./write-up-images/BulletBug.jpg"/>
+<img src="./write-up-images/Shooting.png"/>
+<img src="./write-up-images/ShootingBehind.png"/>
+<h2>Software Design (Jonathan)</h2>
 <h3>Decisions</h3>
 <ul>
 <li>
@@ -146,22 +158,23 @@ component will track which buffs the player has, and respawn timers.</li>
 <ul>
 <li><h3>Components</h3>
 <ul>
-
+<li>Rectangle: Unlike the server version this really only keeps track of position rotation and size.</li>
+<li>SpriteSheet: This keeps track of the image to draw and its size.</li>
 </ul>
 </li>
 <li><h3>Entities</h3>
-<ul>
-
-</ul>
+The entities on the client side are the same as the server side, except they only keep track of what they need to to draw.
 </li>
 <li><h3>Systems</h3>
 <ul>
-
+<li>KeyPress: (Jonathan) This listens for keys pressed by the player and sends the state of which keys are pressed to the server when the state changes.</li>
+<li>DirtySprite: (Jonathan) This system redraws each entity in it only when the layer it is in is marked as dirty, which is when there have been changes applied.</li>
+<li>ScreenFactory:(Jonathan) This is where the layers entities and systems are set up on the client side. This is also where I defined most of the network communications for the client.</li>
 </ul>
 </li>
 </ul>
 
-<h2>Future Development</h2>
+<h2>Future Development (Devon)</h2>
 
 <p>Graphics-  Getting a better set of sprites for characters and bullets and walls would really help it feel like room mates fighting in an 
 		apartment.</p>
@@ -182,13 +195,15 @@ component will track which buffs the player has, and respawn timers.</li>
 
 <p>Mouse Controls-  Currently, the game only works with keyboard controls. We would like to add the ability to play with a mouse.</p>		
 		
+<p>Sound- The game would be much more engaging with a good set of sound effects and a sound track.</p>
 <h2>Group Information</h2>
 
-<p>Jon- Jon's focus for this game was mostly networking. Setting up a server and clients that can connect up to 4 people for play. The main issues
-		were getting the client to properly draw what was sent and to have the server correctly send to the clients. </p>
+<p>Jonathan- Jonathan's focus for this game was mostly networking. Setting up a server and clients that can connect up to 4 people for play. For the most part
+everything worked out in the end, but the lobby sadly was not quite finished in time. </p>
 		
-<p>Devon-  Devon's focus was general game design concepts and getting the physics for the character to work. This included handling collisions and 
+<p>Devon-  Devon's focus was general game design concepts and getting the physics model for the entities to work. This included handling collisions and 
 		movement control. He also created the map format and a basic map file.</p>
 		
 <p>Overall, our focus was game design. Neither of us felt the need to focus on graphics and we had a lot of issues trying to include AI players
 		that worked with the network so we decided the networking aspect was more important.</p>
+</body>
