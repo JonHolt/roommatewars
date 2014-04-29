@@ -1,7 +1,7 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 module.exports={
-    "playerName":"Mike's a Dick",
-    "server":"http://localhost:4242"
+    "playerName":"ProfDurney",
+    "server":"http://161.28.232.82:4242"
 }
 },{}],2:[function(require,module,exports){
 'use strict';
@@ -59,7 +59,8 @@ var World = require('psykick2d').World,
     Helper = require('psykick2d').Helper,
     Component = require('psykick2d').Component,
     SpriteSheet = require('psykick2d').Components.GFX.SpriteSheet,
-    Entity = require('psykick2d').Entity;
+    Entity = require('psykick2d').Entity,
+    playerID;
 
 
 module.exports = {
@@ -134,6 +135,7 @@ module.exports = {
         });
         sprites['Wall'].repeat = 'repeat';
 
+        var KeySystem =new KeySendSystem(sock);
         //initialize the game state with information from the server.
         sock.on('start',function(data){
             var len = Object.keys(data).length;
@@ -157,9 +159,10 @@ module.exports = {
                     throw new Error('Unexpected Layer '+ entityData.layer);
                 }
             }
+
             terrainLayer.addSystem(backgroundDrawSystem);
             playerLayer.addSystem(playerDrawSystem);
-            playerLayer.addSystem(new KeySendSystem(sock));
+            playerLayer.addSystem(KeySystem);
             World.pushLayer(terrainLayer);
             World.pushLayer(playerLayer);
         });
@@ -198,6 +201,9 @@ module.exports = {
                 if(data[key]==='dead'){
                     playerDrawSystem.removeEntity(key|0);
                     backgroundDrawSystem.removeEntity(key|0);
+                    if(key === playerID){
+                        playerLayer.removeSystem(KeySystem);
+                    }
                     //kill from animation system too.
                 }else{
                     var newEntity = new Entity(key|0),
@@ -231,6 +237,7 @@ module.exports = {
             var cam = new PlayerCam(player.getComponent('Rectangle'));
             playerLayer.camera = cam;
             terrainLayer.camera = cam;
+            playerID = data;
             //backgroundDrawSystem.camera = cam;
         });
     },
@@ -1488,10 +1495,9 @@ Layer.prototype.setZIndex = function(zIndex) {
  * @param {System} system
  */
 Layer.prototype.addSystem = function(system) {
-    /*if (!(system instanceof System)) {
+    if (!(system instanceof System)) {
         throw new Error('Invalid argument: \'system\' must be an instance of System');
-    }*/
-
+    }
     if (system instanceof BehaviorSystem && this.behaviorSystems.indexOf(system) === -1) {
         this.behaviorSystems.push(system);
     } else if (system instanceof RenderSystem && this.renderSystems.indexOf(system) === -1) {
