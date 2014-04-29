@@ -183,6 +183,8 @@ module.exports = {
             playerLayer.camera = cam;
             terrainLayer.camera = cam;
             playerID = data;
+            playerLayer.visible = true;
+            terrainLayer.visible = true;
             //backgroundDrawSystem.camera = cam;
         });
     },

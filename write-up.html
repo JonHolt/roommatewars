@@ -104,7 +104,63 @@ I would assign its position component to that of the player that shot it, so tha
 where bullets would spawn next to the player and then follow the player's movement exactly. Just for fun I played around with this bug for a bit where I
 would make a ring of bullets around myself and run around the map. We fixed this by writing a deep copy method for copying components.
 </li>
+<li>
+One of my(Jonathan) favorite bugs we encountered was that bullets sometimes would collide with their shooter. At first this just meant you could kill yourself,
+but then I added something that made it so bullets can't hurt their owner. The first test after that fix, I shot a bullet which proceeded to push me through every wall
+in the map and off into infinity. I fixed this by changing the code from saying bullets can't hurt their owners, to saying bullets can't collide with their owners.
+</li>
 </ul>
+<h3>Parts of the Program</h3>
+<p>
+Psykick has a hierarchy that is not like standard OOP. Because of this I will describe each of the parts that went into this program to make it work as they are.
+For reference: Components are bits of data that can belong to entities. Entities are objects that contain components and represent things in the game. Systems are
+global behaviors that act on any entity that has been added to them, so long as the entity has the right components.
+</p>
+<h3>Server</h3>
+<ul>
+<li><h3>Components</h3>
+<ul>
+<li>Bullet: The bullet component keeps track of how much damage it will do, and which player shot it.</li>
+<li>PlayerInfo: At the moment, the player info component only keeps track of how much health it has and how much damage its bullets should do. Eventually the PlayerInfo
+component will track which buffs the player has, and respawn timers.</li>
+<li>Rectangle: The rectangle keeps track of the position, size, rotation, velocity, and solidity of an object</li>
+</ul>
+</li>
+<li><h3>Entities</h3>
+<ul>
+<li>Wall: Nothing special, just has a rectangle component and stands in the way of things.</li>
+<li>Player: On the server end, players have Rectangle and PlayerInfo components. Players move around and shoot things.</li>
+<li>Bullet: Bullets have Rectangle, and Bullet components. Bullets are meant to fly straight ahead at a constant velocity from where they're spawned until they hit something.</li>
+</ul>
+</li>
+<li><h3>Systems</h3>
+<ul>
+<li>Physics:(Devon) The physics system runs the brunt of the update loop. For every Entity with a rectangle, it moves the ones with velocities and resolves any collisions.</li>
+<li>PlayerInput:(Jonathan) The player input system on the server side receives the 'keypress' messages from the clients and updates the respective player's components to reflect their commands.</li>
+<li>PlayerManager:(Jonathan) The player manager keeps track of players' sockets, ids, and which keys are pressed. It notifies the players of changes after the update loop, and adds them to the game when they join.</li>
+<li>ComponentUpdater: (Devon) The component updater is a helper system that allows the Physics to keep track of exactly what changes between one frame and the next, this lets the player manager send the minimum required data to the clients.</li>
+</ul>
+</li>
+</ul>
+<h3>Client</h3>
+<ul>
+<li><h3>Components</h3>
+<ul>
+
+</ul>
+</li>
+<li><h3>Entities</h3>
+<ul>
+
+</ul>
+</li>
+<li><h3>Systems</h3>
+<ul>
+
+</ul>
+</li>
+</ul>
+
 <h2>Future Development</h2>
 
 <p>Graphics-  Getting a better set of sprites for characters and bullets and walls would really help it feel like room mates fighting in an 
