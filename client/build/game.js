@@ -238,6 +238,8 @@ module.exports = {
             playerLayer.camera = cam;
             terrainLayer.camera = cam;
             playerID = data;
+            playerLayer.visible = true;
+            terrainLayer.visible = true;
             //backgroundDrawSystem.camera = cam;
         });
     },
@@ -1495,9 +1497,10 @@ Layer.prototype.setZIndex = function(zIndex) {
  * @param {System} system
  */
 Layer.prototype.addSystem = function(system) {
-    if (!(system instanceof System)) {
+    /*if (!(system instanceof System)) {
         throw new Error('Invalid argument: \'system\' must be an instance of System');
-    }
+    }*/
+
     if (system instanceof BehaviorSystem && this.behaviorSystems.indexOf(system) === -1) {
         this.behaviorSystems.push(system);
     } else if (system instanceof RenderSystem && this.renderSystems.indexOf(system) === -1) {
